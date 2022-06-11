@@ -1,0 +1,122 @@
+\section{The Logics of Resources}
+
+\setcounter{subsection}{1}
+\subsection{Rules for separating conjunction and magic wand}
+
+\setcounter{exercise}{1}
+\begin{exercise}
+Following the example above derive the following two rules:
+\begin{mathpar}
+  \infer
+  {x \not\in \mathrm{FV}(P)}
+  {P * \exists x. \Phi \provesIff \exists x. P * \Phi}  
+  \and
+  \infer
+  {x \not\in \mathrm{FV}(P)}
+  {P \wedge \exists x. \Phi \provesIff \exists x. P \wedge \Phi}
+\end{mathpar}
+where $\mathrm{FV}$ stands for \textit{free variables}.
+\end{exercise}
+
+\begin{proof}
+Let's prove these two rules one by one, and direction by direction.
+
+\begin{enumerate}
+\item The direction from left to right:
+  \begin{mathpar}
+    \infern{$\wand$E} { 
+      \inferN{$\exists$E} { 
+        \inferN{$\wand$I} {
+          \inferN{$\exists$I} {
+            \vctx, x: \type \mid P * \Phi \proves P * \Phi \and
+            \vctx, x: \type \proves \wtt{x}{\type} \and
+            x \not\in \mathrm{FV}(P)
+          } {\vctx, x: \type \mid P * \Phi \proves \exists x: \type. P * \Phi}
+        } {\vctx, x: \type \mid \Phi \proves P \wand \exists x: \type. P * \Phi}
+      } {
+        \vctx\mid\exists x: \type. \Phi \proves
+        P \wand \exists x: \type. P * \Phi
+      }
+    } {\vctx\mid P * \exists x: \type. \Phi \proves \exists x: \type. P * \Phi}.
+  \end{mathpar}
+
+  The direction from right to left:
+  \begin{mathpar}
+    \infern{$\exists$E} { 
+      \inferN{$*$-mono} {
+        \inferN{$\exists$I} { 
+          \vctx, x: \type \mid \Phi \proves \Phi \and
+          \vctx, x: \type \proves \wtt{x}{\type}
+        } {\vctx, x: \type \mid \Phi \proves \exists x: \type. \Phi}
+      } {\vctx, x: \type \mid P * \Phi \proves P * \exists x: \type. \Phi}
+    } {\vctx\mid \exists x: \type. P * \Phi \proves P * \exists x: \type. \Phi}.
+  \end{mathpar}
+\item To prove the direction from left to right, we first prove a lemma
+  \begin{mathpar}
+    \infer[$\Ra$E$'$]
+    {\propB \proves \prop \Ra \propC}
+    {\prop \wedge \propB \proves \propC}.
+  \end{mathpar}
+  It can be derived by
+  \begin{mathpar}
+    \infern{$\Ra$E} { 
+      \infern{Cut} {
+        \infern{$\wedge$ER}
+        {\inferN{Asm} { } {\prop \wedge \propB \proves \prop \wedge \propB}}
+        {\prop \wedge \propB \proves \propB} \and
+        \propB \proves \prop \Ra \propC
+      } {\prop \wedge \propB \proves \prop \Ra \propC} 
+      \and
+      \inferN{$\wedge$EL}
+      {\inferN{Asm} { } {\prop \wedge \propB \proves \prop \wedge \propB}}
+      {\prop \wedge \propB \proves \prop}
+    } {\prop \wedge \propB \proves \propC}.
+  \end{mathpar}
+
+  Then the original rule can be derived as
+  \begin{mathpar}
+    \infern{$\Ra$E$'$} {
+      \inferN{$\exists$E} {
+        \inferN{$\Ra$I} {
+          \inferN{$\exists$I} {
+            \vctx, x: \type \mid P \wedge \Phi \proves P \wedge \Phi \and
+            \vctx, x: \type \proves \wtt{x}{\type} \and
+            x \not\in \mathrm{FV}(P)
+          } {
+            \vctx, x: \type \mid P \wedge \Phi \proves
+            \exists x: \type. P \wedge \Phi
+          }
+        } {
+          \vctx, x: \type \mid \Phi \proves
+          P \Ra \exists x: \type. P \wedge \Phi
+        }
+      } {
+        \vctx\mid \exists x: \type. \Phi \proves
+        P \Ra \exists x: \type. P \wedge \Phi
+      }
+    } {
+      \vctx\mid P \wedge \exists x: \type. \Phi \proves
+      \exists x: \type. P \wedge \Phi
+    }.
+  \end{mathpar}
+
+  The direction from right to left:
+  \begin{mathpar}
+    \infern{$\exists$E} {
+      \inferN{$\wedge$I} {
+        \infern{$\wedge$EL}{}{\vctx, x: \type \mid P \wedge \Phi \proves P} \and
+        \inferN{$\exists$I} { 
+          \infern{$\wedge$ER}{}{\vctx, x: \type \mid P \wedge \Phi \proves \Phi} 
+          \and
+          \vctx, x: \type \proves \wtt{x}{\type}
+        } {\vctx, x: \type \mid P \wedge \Phi \proves\exists x: \type. \Phi}
+      } {\vctx, x: \type \mid P \wedge \Phi \proves P \wedge \exists x: \type. \Phi}
+    } {
+      \vctx\mid \exists x: \type. P \wedge \Phi \proves
+      P \wedge \exists x: \type. \Phi
+    }.
+  \end{mathpar}
+
+\end{enumerate}
+\end{proof}
+

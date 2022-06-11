@@ -1,0 +1,19 @@
+\makeatletter%
+\@ifundefined{basedir}{%
+\newcommand\basedir{}%
+}{}%
+\makeatother%
+
+\usepackage{amsthm}
+\usepackage{mathpartir}
+
+\usepackage{\basedir pftools}
+\usepackage{\basedir iris}
+\usepackage{\basedir heaplang}
+
+\theoremstyle{definition}
+\newtheorem{example}{Example}
+\newtheorem{lem}{Lemma}
+\newtheorem{thm}{Theorem}
+\newtheorem{exercise}{Exercise}[section]
+
