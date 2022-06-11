@@ -8,9 +8,25 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: Compile LaTeX document
         uses: xu-cheng/latex-action@master
         with:
           working_directory: tex
           root_file: iris-exercises.tex
+      - name: Deploy PDF File
+        run: |
+          git worktree add pdf pdf
+          git config user.name "Deploy from CI"
+          git config user.email ""
+          cd pdf
+          # Delete the ref to avoid keeping history.
+          git update-ref -d refs/heads/pdf
+          rm -rf *
+          mkdir pdf
+          mv ../tex/*.pdf pdf
+          git add .
+          git commit -m "Deploy $GITHUB_SHA to pdf"
+          git push --force
