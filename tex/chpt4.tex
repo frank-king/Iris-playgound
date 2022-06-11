@@ -1,0 +1,385 @@
+\section{Separation Logic for Sequential Programs}
+\begin{exercise}
+The rule
+\begin{mathpar}
+  \infer[Ht-frame-invalid]
+  {S \proves \hoare{P}{e}{v.Q}}
+  {S \proves \hoare{P \wedge R}{e}{v.Q \wedge R}}
+
+\end{mathpar}
+is not sound.
+
+Come up with a counterexample to the above rule.
+\end{exercise}
+
+\begin{proof}
+  We have \[
+    S \proves 
+    \hoare{x \gmapsto 0 \wedge y \gmapsto 1}
+    {\mapelem{y}{\deref{x}}}
+    {v.v = \TT \wedge y \gmapsto 0},
+  \] but not \[
+    S \proves 
+    \hoare{x \gmapsto 0 \wedge y \gmapsto 1 \wedge y \gmapsto 1}
+    {\mapelem{y}{\deref{x}}}
+    {v.v = \TT \wedge y \mapsto 0 \wedge y \gmapsto 1}.
+  \]
+\end{proof}
+
+\begin{exercise}
+  Prove \[
+    S \proves 
+    (\hoare{P}{e}{v.Q} \Ra \forall R: \Prop, \hoare{P * R}{e}{v.Q * R}).
+  \]
+\end{exercise}
+
+\begin{proof}
+  It can be derived by
+  \begin{mathpar}
+    \infern{$\Ra$I} {
+      \inferN{$\forall$I} {
+        \inferN{Ht-frame} {
+          \inferN{$\wedge$ER}{ }{
+            \vctx, R: \Prop \mid S \wedge \hoare{P}{e}{v.Q} \proves
+            \hoare{P}{e}{v.Q}
+          }
+        } {
+          \vctx, R: \Prop \mid S \wedge \hoare{P}{e}{v.Q} \proves
+          \hoare{P * R}{e}{v.Q * R}
+        }
+      } {
+        \vctx\mid S \wedge \hoare{P}{e}{v.Q} \proves
+        \forall R: \Prop, \hoare{P * R}{e}{v.Q * R}
+      }
+    } {
+      \vctx\mid S \proves 
+      (\hoare{P}{e}{v.Q} \Ra \forall R: \Prop, \hoare{P * R}{e}{v.Q * R})
+    }.
+  \end{mathpar}
+\end{proof}
+
+\begin{exercise}
+  Use \rulenamestyle{Ht-bind} to show $\hoare{\TRUE}{3 + 4 + 5}{v.v = 12}$.
+\end{exercise}
+
+\begin{proof}
+  It is obvious that the primary evaluation context of $3 + 4 + 5$ is $3 + 4$.
+  We must show $\hoare{\TRUE}{3 + 4}{w.Q}$ and 
+  $\forall w. \hoare{Q}{w + 5}{w.w = 12}$ for some $Q$.
+
+  Let $Q := w = 7$, then these two proposition is immediate to prove.
+\end{proof}
+
+\begin{exercise}
+ Prove the derived rule $P * Q \proves P \wedge Q$ for any propositions $P$ and $Q$.
+\end{exercise}
+
+\begin{proof}
+  It can be derived by
+  \begin{mathpar}
+    \infern{$\wedge$I} {
+      \infern{$*$-weak}{ }{P * Q \proves P} \and
+      \inferN{$*$-weak, $*$-comm}{ }{P * Q \proves Q}
+    } {P * Q \proves P \wedge Q}.
+  \end{mathpar}
+\end{proof}
+
+\begin{exercise}
+  Use the intuitive reading of Hoare triples to explain why the above rules are 
+  sound.
+  \begin{mathpar}
+    \inferB[Ht-disj] {
+      S \proves \hoare{P}{e}{v.R} \and S \proves \hoare{Q}{e}{v.R}
+    } {S \proves \hoare{P \vee Q}{e}{v.R}}
+    \and
+    \inferB[Ht-exist] {
+      x \not\in Q \and S \proves \forall x. \hoare{P}{e}{v.Q}
+    } {
+      x \not\in Q \and S \proves \hoare{\exists x.P}{e}{v.Q}
+    }
+  \end{mathpar}
+\end{exercise}
+
+% \begin{proof}
+  \hspace*{-2em} \textit{Proof.}
+  Firstly, consider rule \rulenamestyle{Ht-disj}, the direction from top to 
+  bottom.
+
+  The hypothses tell us, that for any precondition $P$, after execution of $e$,
+  then $v.R$ holds, and so for any precondition $Q$.
+  It is reasonable that for any precondition $P \vee Q$, after execution of
+  $e$, then $v.R$ holds.
+
+  Then the opposite direction.
+
+  The hypothsis tells us, that for any precondition $P \vee Q$, after execution
+  of $e$, then $v.R$ holds.
+  In the precondition, $P \vee Q$ (i.e., either $P$ or $Q$ holds) proves
+  the postcondition $v.R$, then separately, both of $P$ and $Q$ as a precondition
+  in alone, should prove the postcondition $v.R$.
+  
+  Secondly, consider rule \rulenamestyle{Ht-exist}, the direction from top to 
+  bottom.
+
+  The hypothsis tells us, that for all $x$, for any precondition $P$, after
+  execution of $e$, then $v.Q$ holds.
+  We peek any $x$ where $P$ holds, then for this particular $x$, the precondition
+  $P$ must prove the postcondition $v.Q$. So $\exists x. P$, as a precondition,
+  should prove the same postcondition, too.
+
+  Then the opposite direction.
+
+  \textit{Admitted.} (Need more strict definition of Hoare triple).
+  % TODO
+  % The hypothsis tells us, that for any precondition $\exists x. P$, after execution
+  % of $e$, then $v.Q$ holds.
+  % The precondition $\exists x. P$ means all the $x$ such that $P$ holds. So for all
+  % $x$, the precondition $P$ should prove the postcondition $v.Q$.
+% \end{proof}
+
+\setcounter{exercise}{7}
+\begin{exercise}
+  Prove the following derived rule. For any \textit{value} $u$ and expression $e$
+  we have
+  \begin{mathpar}
+    \infer{S \proves \hoare{P}{e}{v.Q}}
+    {S \proves \hoare{P}{\pi_1(e, u)}{v.Q}}
+  \end{mathpar}
+  It is important that the second component is a value. Show that the following
+  rule is not valid in general if $e_1$ is allowed to be an arbitrary expression.
+  \begin{mathpar}
+    \infer{S \proves \hoare{P}{e}{v.Q}}
+    {S \proves \hoare{P}{\pi_1(e, e_1)}{v.Q}}
+  \end{mathpar}
+  Hint: What if $e$ and $e_1$ read or write to the same location?
+
+  The problem is that we know nothing about the behaviour of $e_1$. But we can
+  specify its behaviour using Hoare triples. Come up with some propositions 
+  $P_1$ and $P_2$ or some conditions on $P_1$ and $P_2$ such that the following 
+  rule
+  \begin{mathpar}
+    \infer{
+      S \proves \hoare{P}{e}{v.Q} \and
+      S \proves \hoare{P_1}{e_1}{v.P_2}
+    } {S \proves \hoare{P}{\pi_1(e, e_1)}{v.Q}}
+  \end{mathpar}
+  is derivable.
+\end{exercise}
+
+\begin{proof}
+  \begin{enumerate}
+  \item First, we prove the derivation by \rulenamestyle{Ht-bind}.
+  \begin{mathpar}
+    \infer{S \proves \hoare{P}{e}{v.Q}}
+    {S \proves \hoare{P}{\pi_1(e, u)}{v.Q}}
+  \end{mathpar}
+  
+  Applying \rulenamestyle{Ht-bind} to the goal $S \proves \hoare{P}{\pi_1(e, u)}
+  {v.Q}$, we have to show 
+  \begin{align}
+    S \proves & \hoare{P}{(e, u)}{v_1.Q_1}, \label{exe4.8:1} \\
+    S \proves & \hoare{\subst{Q_1}{v_1}{u_1}}{\pi_1 u_1}{v.Q}, \label{exe4.8:2}
+  \end{align}
+  for some $Q_1$.
+
+  Applying \rulenamestyle{Ht-bind} again to \eqref{exe4.8:1}, we have to show
+  \begin{align}
+    S \proves & \hoare{P}{e}{v_2.Q_2}, \label{exe4.8:3} \\
+    S \proves & \hoare{\subst{Q_2}{v_2}{u_2}}{(u_2, u)}{v_1.Q_1}, \label{exe4.8:4}
+  \end{align}
+  for some $Q_2$.
+
+  From the hypothesis $S \proves \hoare{P}{e}{v.Q}$, \eqref{exe4.8:3} is immediate 
+  for $Q_2 := \subst{Q}{v}{v_2}$. Then \eqref{exe4.8:4} becomes
+  \begin{align}
+    S \proves & \hoare{\subst{Q}{v}{u_2}}{(u_2, u)}{v_1.Q_1}.
+    \tag{\ref{exe4.8:4}a} \label{exe4.8:4a}
+  \end{align}
+
+  Since $(u_2, u)$ is a value, we have
+  \begin{align*}
+    S \proves & \hoare{\TRUE}{(u_2, u)}{v_1.v_1 = (u_2, u)},
+  \end{align*}
+  by \rulenamestyle{Ht-ret}, which derives 
+  \begin{align}
+    S \proves & 
+    \hoare{\TRUE * \subst{Q}{v}{u_2}}{(u_2, u)}
+    {v_1.v_1 = (u_2, u) * \subst{Q}{v}{u_2}},
+    \tag{\ref{exe4.8:4}b} \label{exe4.8:4b}
+  \end{align}
+  by \rulenamestyle{Ht-frame}. Hence, \eqref{exe4.8:4a} is reached for $Q_1 :=
+  v_1 = (u_2, u) * \subst{Q}{v}{u_2}$.
+
+  Now we only have to show the remained \eqref{exe4.8:2}, which becomes
+  \begin{align}
+    S \proves & \hoare{u_1 = (u_2, u) * \subst{Q}{v}{u_2}}{\pi_1 u_1}{v.Q}.
+    \tag{\ref{exe4.8:2}a} \label{exe:4.8:2a}
+  \end{align}
+
+  The persistent proposition $u_1 = (u_2, u)$ can be moved out of the Hoare
+  precondition, and substitute the Hoare triple with it, we have
+  \begin{align}
+    S \proves & \hoare{\subst{Q}{v}{u_2}}{\pi_1 (u_2, u)}{v.Q}.
+    \tag{\ref{exe4.8:2}b} \label{exe:4.8:2b}
+  \end{align}
+
+  Applying \rulenamestyle{Ht-proj}, we have
+  \begin{align*}
+    S \proves & \hoare{\TRUE}{\pi_1 (u_2, u)}{v.v = u_2}.
+  \end{align*}
+  And then by \rulenamestyle{Ht-frame} again, there is
+  \begin{align*}
+    S \proves &
+    \hoare{\TRUE * \subst{Q}{v}{u_2}}{\pi_1 (u_2, u)}
+    {v.v = u_2 * \subst{Q}{v}{u_2}}.
+  \end{align*}
+  Apparently, \eqref{exe:4.8:2b} is derivable using \rulenamestyle{Ht-csq}.
+
+  \item Now we show that rule 
+  \begin{mathpar}
+    \infer{S \proves \hoare{P}{e}{v.Q}}
+    {S \proves \hoare{P}{\pi_1(e, e_1)}{v.Q}}
+  \end{mathpar}
+  is invalid by a counterexample.
+
+  Let $P := \loc \gmapsto 0$, $e := \mapelem{\loc}{0}$, $e_1 := 
+  \mapelem{\loc}{1}$, and $Q := v = () \wedge \loc \gmapsto 0$.
+
+  It is obvious that $\hoare{P}{e}{v.Q}$ holds but $\hoare{P}{\pi_1(e, e_1)}{v.Q}$
+  not, since \[
+    \hoare{\loc \gmapsto 0}{\pi_1(\mapelem{\loc}{0}, \mapelem{\loc}{1})}
+    {v.v = () \wedge \loc \gmapsto 1}.
+  \]
+
+  \item Finally, we add some restrictions on $e_1$ to let
+  \begin{mathpar}
+    \infer{
+      S \proves \hoare{P}{e}{v.Q} \and
+      S \proves \hoare{P_1}{e_1}{v.P_2}
+    } {S \proves \hoare{P}{\pi_1(e, e_1)}{v.Q}}
+  \end{mathpar}
+  hold.
+
+  The idea is that, the expression $(e, e_1)$ is evaluated sequentially,
+  first $e$ then $e_1$, and $\pi_1(e, e_1)$ selects the evaluation result of 
+  $e$, so the evaluation result of $e_1$ doesn't matter, and it can refer 
+  to the resource claimed by $Q$ but it must not mutate it.
+
+  Such $P_1$ and $P_2$ can be $P_1 := \exists v. Q$ and $P_2 := Q$.
+
+  First, apply \rulenamestyle{Ht-bind} to the goal $S \proves \hoare{P}
+  {\pi_1(e, e_1)}{v.Q}$, 
+  \begin{align}
+    S \proves & \hoare{\subst{Q}{v}{u_2}}{(u_2, e_1)}{v_1.Q_1}, \label{exe4.8:5} \\
+    S \proves & \hoare{\subst{Q_1}{v_1}{u_1}}{\pi_1 u_1}{v.Q}. \label{exe4.8:6}
+  \end{align}
+  
+  Then apply \rulenamestyle{Ht-bind} to \eqref{exe4.8:5},
+  \begin{align}
+    S \proves & \hoare{\subst{Q}{v}{u_2}}{e_1}{w_1.R_1}, \label{exe4.8:7} \\
+    S \proves & \hoare{\subst{R_1}{w_1}{w_2}}{(u_2, w_2)}{v_1.Q_1}. \label{exe4.8:8}
+  \end{align}
+
+  Applying \rulenamestyle{Ht-exist} and \rulenamestyle{$\forall$-E} to the
+  second hypothesis, there is
+  \begin{align*}
+    S \proves & \hoare{Q}{e_1}{v.Q}.
+  \end{align*}
+
+  Let 
+  \begin{align*}
+    Q_1 := & v = u_2 * v_1 = (u_2, w_2) * \subst{Q}{v}{u_2}, \\
+    R_1 := & w_1 = u_2 * \subst{Q}{v}{u_2},
+  \end{align*}
+  then \eqref{exe4.8:6}, \eqref{exe4.8:7} and \eqref{exe4.8:8} become
+  \begin{align}
+    S \proves & 
+    \hoare{v = u_2 * u_1 = (u_2, w_2) * \subst{Q}{v}{u_2}}{\pi_1 u_1}{v.Q},
+    \tag{\ref{exe4.8:6}a} \label{exe4.8:6a} \\
+    %
+    S \proves & \hoare{\subst{Q}{v}{u_2}}{e_1}{w_1.w_1 = u_2 * \subst{Q}{v}{u_2}},
+    \tag{\ref{exe4.8:7}a} \label{exe4.8:7a} \\
+    %
+    S \proves & \hoare{w_2 = u_2 * \subst{Q}{v}{u_2}}{(u_2, w_2)\notag \\&}
+    {v_1.v = u_2 * v_1 = (u_2, w_2) * \subst{Q}{v}{u_2}}.
+    \tag{\ref{exe4.8:8}a} \label{exe4.8:8a}
+  \end{align}
+  
+  \eqref{exe4.8:7a} is immediate from the second hypothesis.
+
+  Substitute \eqref{exe4.8:6a} with $u_1 = (u_2, w_2)$ and $v = u_2$, and
+  substitute \eqref{exe4.8:8a} with $w_2 = u_2$,
+  \begin{align}
+    S \proves & 
+    \hoare{Q}{\pi_1 (v, w_2)}{v.Q}, \tag{\ref{exe4.8:6}b} \label{exe4.8:6b} \\
+    S \proves & \hoare{\subst{Q}{v}{u_2}}{(u_2, u_2)}
+    {v_1.v = u_2 * v_1 = (u_2, u_2) * \subst{Q}{v}{u_2}}.
+    \tag{\ref{exe4.8:8}b} \label{exe4.8:8b}
+  \end{align}
+
+  \eqref{exe4.8:6b} is immediate by \rulenamestyle{Ht-proj}, and 
+  \eqref{exe4.8:8b} is immediate by \rulenamestyle{Ht-ret} and 
+  \rulenamestyle{Ht-frame}.
+  \end{enumerate}
+\end{proof}
+
+\begin{exercise}
+  From \rulenamestyle{Ht-If} we can derive two, perhaps more natural, rules,
+  which are simpler to use. They require us to only prove a specification of
+  the branch which will be taken.
+  \begin{mathpar}
+    \infer[Ht-If-True] {
+      \hoare{P * v = \True}{e_2}{u.Q}
+    } {
+      \hoare{P * v = \True}{\If v then e_2 \Else e_3}{u.Q}
+    } \and
+    \infer[Ht-If-False] {
+      \hoare{P * v = \False}{e_3}{u.Q}
+    } {
+      \hoare{P * v = \False}{\If v then e_2 \Else e_3}{u.Q}
+    }
+  \end{mathpar}
+  Derive \rulenamestyle{Ht-If-True} and \rulenamestyle{Ht-If-False} from 
+  \rulenamestyle{Ht-If}.
+\end{exercise}
+
+\begin{proof}
+  \begin{mathpar}
+    \infern{Ht-If} {
+      \infer{\hoare{P * v = \True}{e_2}{u.Q}}
+      {\hoare{P * v = \True * v = \True}{e_2}{u.Q}} \and
+      \infer{
+        \inferN{Ht-false}{ }{\hoare{\FALSE}{e_3}{u.Q}}
+      } {\hoare{P * v = \True * v = \False}{e_3}{u.Q}}
+    } {
+      \hoare{P * v = \True}{\If v then e_2 \Else e_3}{u.Q}
+    } \and
+    \infern{Ht-If} {
+      \infer{
+        \inferN{Ht-false}{ }{\hoare{\FALSE}{e_2}{u.Q}}
+      } {\hoare{P * v = \False * v = \True}{e_2}{u.Q}} \and
+      \infer{\hoare{P * v = \False}{e_3}{u.Q}}
+      {\hoare{P * v = \False * v = \False}{e_3}{u.Q}}
+    } {
+      \hoare{P * v = \False}{\If v then e_2 \Else e_3}{u.Q}
+    }
+  \end{mathpar}
+\end{proof}
+
+\begin{exercise}
+  Show the following derived rule for any expression $e$ and $i \in \{1, 2\}$.
+  \begin{mathpar}
+    \infer {
+      S \proves \hoare{P}{e}{v.v = \textlog{inj}_i u * Q} \and
+      S \proves \hoare{\subst{Q}{v}{\textlog{inj}_i u}}{\subst{e_i}{x_i}{u}}{v.R}
+    } {
+      S \proves \hoare{P}
+      {\Match e with \textlog{inj}_1 x_1 => e_1 | \textlog{inj}_2 x_2 => e_2 end}
+      {v.R}
+    }
+  \end{mathpar}
+\end{exercise}
+
+\begin{proof}
+  It can be derived by \rulenamestyle{Ht-bind} and \rulenamestyle{Ht-Match}.
+\end{proof}
