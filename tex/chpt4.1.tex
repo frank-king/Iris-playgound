@@ -1,0 +1,251 @@
+\subsection{Derived rules for Hoare triples}
+\begin{exercise}
+  Show the following derived rule
+  \begin{mathpar}
+    \infer[Ht-Pre-Eq] {
+      \vctx\mid S \proves 
+      \hoare{\subst{P}{x}{v}}{\subst{e}{x}{v}}{u.\subst{Q}{x}{v}}
+    } {\vctx, x: \Val \mid S \proves \hoare{x = v \wedge P}{e}{u.Q}}
+  \end{mathpar}
+\end{exercise}
+
+\begin{proof}
+  \begin{mathpar}
+    \infern{Ht-Eq} {
+      \inferN{Eq} {
+        \inferrule*{
+          \vctx\mid S \proves 
+          \hoare{\subst{P}{x}{v}}{\subst{e}{x}{v}}{u.\subst{Q}{x}{v}}
+        } {
+          \vctx, x: \Val \mid S \wedge x = v \proves 
+          \hoare{\subst{P}{x}{v}}{\subst{e}{x}{v}}{u.\subst{Q}{x}{v}}
+        } \and
+        S \wedge x = v \proves x = v
+      } {\vctx, x: \Val \mid S \wedge x = v \proves \hoare{P}{e}{u.Q}}
+    } {\vctx, x: \Val \mid S \proves \hoare{x = v \wedge P}{e}{u.Q}}
+  \end{mathpar}
+\end{proof}
+
+\begin{exercise}
+  Recall we define the let expression $\Let x = e1 in e2$ using abstraction and 
+  application. Show the following derived rule
+  \begin{mathpar}
+    \infer[Ht-let] {
+      S \proves \hoare{P}{e_1}{x.Q} \and
+      S \proves \forall v. \hoare{\subst{Q}{x}{v}}{\subst{e_2}{x}{v}}{u.R}
+    } {S \proves \hoare{P}{\Let x = e_1 in e_2}{u.R}}
+  \end{mathpar}
+  Using this rule is perhaps a bit inconvenient since most of the time the result
+  of evaluating $e_1$ will be a single value and the postcondition $Q$ will be of
+  the form $x = v \wedge Q'$ for some value $v$.
+
+  The following rule, a special case of the above rule reflects this common case.
+  Derive the rule from the rule \rulenamestyle{Ht-let}.
+  \begin{mathpar}
+    \infer[Ht-let-det] {
+      S \proves \hoare{P}{e_1}{x.x = v \wedge Q} \and
+      S \proves \hoare{\subst{Q}{x}{v}}{\subst{e_2}{x}{v}}{u.R}
+    } {S \proves \hoare{P}{\Let x = e_1 in e_2}{u.R}}
+  \end{mathpar}
+  Define the sequencing expression $e_1; e_2$ such that when this expression is
+  run first $e_1$ is evaluated to a value, the value is discarded, and then $e_2$
+  is evaluated. Show the following specifications for the defined construct.
+  \begin{mathpar}
+    \infer[Ht-seq] {
+      S \proves \hoare{P}{e_1}{v.Q} \and
+      S \proves \hoare{\exists x. Q}{e_2}{u.R}
+    } {
+      S \proves \hoare{P}{e_1; e_2}{u.R}
+    } \and
+    \infer {
+      S \proves \hoare{P}{e_1}{\_.Q} \and
+      S \proves \hoare{Q}{e_2}{u.R}
+    } {
+      S \proves \hoare{P}{e_1 ; e_2}{u.R}
+    }
+  \end{mathpar}
+  where $\_.Q$ means that $Q$ does not mention the return value.
+\end{exercise}
+
+\begin{proof}
+  \begin{enumerate}
+    \item Notice that $\Let x = e_1 in e_2$ is desugared to $(\Rec f(x)=e_2) e_1$,
+      then \rulenamestyle{Ht-let} becomes
+      \begin{mathpar}
+        \infer {
+          S \proves \hoare{P}{e_1}{x.Q} \and
+          S \proves \forall v. \hoare{\subst{Q}{x}{v}}{\subst{e_2}{x}{v}}{u.R}
+        } {S \proves \hoare{P}{(\Rec f(x)=e_2) e_1}{u.R}}
+      \end{mathpar}
+
+      Applying \rulenamestyle{Ht-bind} to $S \proves 
+      \hoare{P}{(\Rec f(x)=e_2) e_1}{u.R}$, we have to show
+      \begin{align}
+        S \proves & \hoare{P}{e_1}{x.Q}, \label{exe4.12:1} \\
+        S \proves & \forall v. \hoare{\subst{Q}{v}{x}}{(\Rec f(x)=e_2) v}{u.R},
+        \label{exe4.12:2}
+      \end{align}
+      where the original $x$ \eqref{exe4.12:2} has been substituted by $v$ in
+      order not to be confused with the $x$ in $f(x)$.
+
+      \eqref{exe4.12:1} is immediate from the first hypothsis. Applying
+      \rulenamestyle{Ht-rec} to \eqref{exe4.12:2}, we have to show
+      \begin{align*}
+        \vctx, g: \Val \mid S \wedge \forall v. \hoare{Q}{g\, v}{u.R} \proves
+        \forall v. \hoare{\subst{Q}{x}{v}}{\subst{\subst{e_2}{f}{g}}{x}{v}}{u.R}
+      \end{align*}
+
+      Since $\Rec f(x)=e_2$ is not recursive, $e_2$ does not contain $f$,
+      we can omit the $g$, then
+      \begin{align*}
+        \vctx, g: \Val \mid S \wedge \forall v. \hoare{Q}{g\, v}{u.R} \proves
+        \forall v. \hoare{\subst{Q}{x}{v}}{\subst{e_2}{x}{v}}{u.R}
+      \end{align*}
+      which is immediate from the second hypothsis.
+      
+    \item Notice that $e_1; e_2$ is desugared to $\Let \_ = e_1 in e_2$, then
+      \rulenamestyle{Ht-seq} is immediate from \rulenamestyle{Ht-let-det}.
+  \end{enumerate}
+\end{proof}
+
+\begin{exercise}
+  Recall we defined $\Lam x.e$ to be $\Rec f(x)=e$ where $f$ is some fresh variable.
+  Show the following derived rule.
+  \begin{mathpar}
+    \infer[Ht-beta] 
+    {S \proves \hoare{P}{\subst{e}{x}{v}}{u.Q}}
+    {S \proves \hoare{P}{(\Lam x.e)v}{u.Q}}
+  \end{mathpar}
+\end{exercise}
+
+\begin{proof}
+  Desugar $(\Lam x.e) v$ to $(\Rec f(x)=e) v$, and apply \rulenamestyle{Ht-rec}
+  to it, then we have to show
+  \begin{align*}
+    \vctx, g: \Val \mid S \wedge \forall v. \hoare{P}{g\, v}{u.Q} \proves
+    \hoare{P}{\subst{e}{x}{v}}{u.Q}
+  \end{align*}
+  which is immediate from the hypothesis.
+\end{proof}
+
+\begin{exercise}
+  Derive the following rule.
+  \begin{mathpar}
+    \infer[Ht-bind-det] {
+      E \text{is an eval. context} \and
+      S \proves \hoare{P}{e}{x.x = u \wedge Q} \and
+      S \proves \hoare{\subst{Q}{x}{u}}{E[u]}{w. R}
+    } {S \proves \hoare{P}{E[e]}{w. R}}
+  \end{mathpar}
+\end{exercise}
+
+\begin{proof}
+  Apply \rulenamestyle{Ht-bind} with $Q := x = u \wedge Q$ to the goal, then we
+  have to show
+  \begin{align*}
+    S \proves \forall v. \hoare{u = v \wedge \subst{Q}{x}{v}}{E[v]}{w. R}
+  \end{align*}
+  
+  Extract $u = v$ with \rulenamestyle{Ht-eq} and substitute $v$ with $u$ in the
+  above entailment,
+  \begin{align*}
+    S \wedge u = u \proves \hoare{\subst{Q}{x}{u}}{E[u]}{w. R}
+  \end{align*}
+  which is immediate from the hypothesis.
+\end{proof}
+
+\setcounter{exercise}{15}
+\begin{exercise}
+  Show the following triples and entailments in detail.
+  \begin{enumerate}
+    \item \[ \hoare{R * \loc \gmapsto m}{\mapelem{\loc}{\deref{\loc} + 5}}
+      {v.R * v = () * \loc \gmapsto (m + 5)} \]
+    \item \[ \hoare{P}{\subst{e}{x}{m + 5}}{v.Q} \proves
+      \hoare{P * \loc \gmapsto m}{\Let x = \deref{\loc} + 5 in e}
+      {v.Q * \loc \gmapsto m} \]
+    \item Assuming $u$ does not appear in $P$ and $Q$ show the following
+      entailment.
+      \[ \hoare{P}{\subst{e}{x}{v_1}}{v.Q} \proves
+      \hoare{u = (v_1, v_2) * P}{\Let x = \pi_1 u in e}{v.Q} \]
+  \end{enumerate}
+\end{exercise}
+
+\begin{proof}
+  \begin{enumerate}
+    \item \label{exe4.16.1} 
+      Apply \rulenamestyle{Ht-bind-det} to the goal
+      \begin{align}
+        \hoare{\loc \gmapsto m}{\mapelem{\loc}{\deref{\loc} + 5}}
+        {v.v = () * \loc \gmapsto (m + 5)} \label{exe4.16:1}
+      \end{align}
+      
+      Apply \rulenamestyle{Ht-bind-det} to \eqref{exe4.16:1},
+      \begin{align}
+        & \hoare{\loc \gmapsto m}{\deref{\loc} + 5}{v.v = v_1 * Q_1},
+        \label{exe4.16:2} \\
+        & \hoare{\subst{Q_1}{v}{v_1}}{\mapelem{\loc}{v_1}}
+        {v.v = () * \loc \gmapsto (m + 5)} \label{exe4.16:3}
+      \end{align}
+
+      Apply \rulenamestyle{Ht-bind-det} to \eqref{exe4.16:2},
+      \begin{align}
+        & \hoare{\loc \gmapsto m}{\deref{\loc}}{v.v = v_2 * Q_2},
+        \tag{\ref{exe4.16:2}a} \label{exe4.16:2a} \\
+        & \hoare{\subst{Q_2}{v}{v_2}}{v_2 + 5}{v.v = v_1 * Q_1},
+        \tag{\ref{exe4.16:2}b} \label{exe4.16:2b}
+      \end{align}
+
+      Then by \rulenamestyle{Ht-load}, \eqref{exe4.16:2a} holds for
+      $v_2 = m$ and $Q_2 := \loc \gmapsto m$, and \eqref{exe4.16:2b}
+      becomes,
+      \begin{align*}
+        \hoare{\loc \gmapsto m}{m + 5}{v.v = v_1 * Q_1}.
+      \end{align*}
+      By \rulenamestyle{Ht-op}, it holds for $v_1 = m + 5$ and $Q_1 := 
+      \loc \gmapsto m$. Then \eqref{exe4.16:3} becomes
+      \begin{align*}
+        & \hoare{\loc \gmapsto m}{\mapelem{\loc}{m + 5}}
+        {v.v = () * \loc \gmapsto (m + 5)} 
+      \end{align*}
+      which is obvious by \rulenamestyle{Ht-store}.
+
+    \item Apply \rulenamestyle{Ht-let-det} to the goal
+      \begin{align}
+        \hoare{P}{\subst{e}{x}{m + 5}}{v.Q} \proves &
+        \hoare{P * \loc \gmapsto m}{\deref{\loc} + 5}{x.x = v \wedge R}
+        \label{exe4.16:4} \\
+        \hoare{P}{\subst{e}{x}{m + 5}}{v.Q} \proves &
+        \hoare{\subst{R}{x}{v}}{\subst{e}{x}{v}}{v.Q}
+        \label{exe4.16:5}
+      \end{align}
+
+      Similar to \ref{exe4.16.1}, \eqref{exe4.16:4} is immediate for
+      $v = m + 5$ and $R := \loc \gmapsto m * P$. Then \eqref{exe4.16:5}
+      becomes
+      \begin{align*}
+        \hoare{P}{\subst{e}{x}{m + 5}}{v.Q} \proves &
+        \hoare{\loc \gmapsto m * P}{\subst{e}{x}{m + 5}}{v.Q}
+      \end{align*}
+      which is immediate by apply \rulenamestyle{$*$-weak} and
+      \rulenamestyle{Asm}.
+
+    \item Apply \rulenamestyle{Ht-let-det} to the goal,
+      \begin{align}
+        \hoare{P}{\subst{e}{x}{v_1}}{v.Q} \proves &
+        \hoare{u = (v_1, v_2) * P}{\pi_1 u}{x.x = x_1 \wedge R} \label{exe4.16:6} \\
+        \hoare{P}{\subst{e}{x}{v_1}}{v.Q} \proves &
+        \hoare{\subst{R}{x}{x_1}}{\subst{e}{x}{x_1}}{v.Q} \label{exe4.16:7}
+      \end{align}
+      Substitute $u$ in \eqref{exe4.16:6},
+      \begin{align*}
+        \hoare{P}{\pi_1 (v_1, v_2)}{x.x = x_1 \wedge R}.
+      \end{align*}
+      It is obvious by \rulenamestyle{Ht-proj} for $x_1 = v_1$ and $R := P$.
+      Then \eqref{exe4.16:7} becomes
+      \begin{align*}
+        \hoare{P}{\subst{e}{x}{v_1}}{v.Q} \proves &
+        \hoare{P}{\subst{e}{x}{v_1}}{v.Q}
+      \end{align*}
+      which is immediate by \rulenamestyle{Asm}.
+  \end{enumerate}
+\end{proof}

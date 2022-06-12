@@ -17,3 +17,7 @@
 \newtheorem{thm}{Theorem}
 \newtheorem{exercise}{Exercise}[section]
 
+\newcounter{equationstore}
+\AtBeginEnvironment{proof}{\setcounter{equationstore}{\value{equation}}
+\setcounter{equation}{0}\renewcommand{\theequation}{\arabic{equation}}}
+\AtEndEnvironment{proof}{\setcounter{equation}{\value{equationstore}}}
