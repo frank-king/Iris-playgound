@@ -1,0 +1,16 @@
+opam-version: "2.0"
+maintainer: "Frank King <frankking1729@gmail.com>"
+authors: "Frank King"
+bug-reports: "https://github.com/frank-king/iris-playground/issues"
+homepage: "https://github.com/frank-king/iris-playground"
+dev-repo: "git+https://gitlab.com/frank-king/iris-playgound.git"
+
+synopsis: "Exercises of Lecture Notes on Iris -- not meant to be used as a dependency of anything"
+
+depends: [
+  "coq-iris-heap-lang" { (= "dev.2022-05-24.0.5a3fc21a") | (= "dev") }
+  "coq-autosubst" { = "dev" }
+]
+
+build: [make "-j%{jobs}%"]
+install: [make "install"]
