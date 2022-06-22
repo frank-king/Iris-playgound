@@ -3,7 +3,7 @@
   Show the following derived rule
   \begin{mathpar}
     \infer[Ht-Pre-Eq] {
-      \vctx\mid S \proves 
+      \vctx\mid S \proves
       \hoare{\subst{P}{x}{v}}{\subst{e}{x}{v}}{u.\subst{Q}{x}{v}}
     } {\vctx, x: \Val \mid S \proves \hoare{x = v \wedge P}{e}{u.Q}}
   \end{mathpar}
@@ -14,10 +14,10 @@
     \infern{Ht-Eq} {
       \inferN{Eq} {
         \inferrule*{
-          \vctx\mid S \proves 
+          \vctx\mid S \proves
           \hoare{\subst{P}{x}{v}}{\subst{e}{x}{v}}{u.\subst{Q}{x}{v}}
         } {
-          \vctx, x: \Val \mid S \wedge x = v \proves 
+          \vctx, x: \Val \mid S \wedge x = v \proves
           \hoare{\subst{P}{x}{v}}{\subst{e}{x}{v}}{u.\subst{Q}{x}{v}}
         } \and
         S \wedge x = v \proves x = v
@@ -27,7 +27,7 @@
 \end{proof}
 
 \begin{exercise}
-  Recall we define the let expression $\Let x = e1 in e2$ using abstraction and 
+  Recall we define the let expression $\Let x = e1 in e2$ using abstraction and
   application. Show the following derived rule
   \begin{mathpar}
     \infer[Ht-let] {
@@ -78,7 +78,7 @@
         } {S \proves \hoare{P}{(\Rec f(x)=e_2) e_1}{u.R}}
       \end{mathpar}
 
-      Applying \rulenamestyle{Ht-bind} to $S \proves 
+      Applying \rulenamestyle{Ht-bind} to $S \proves
       \hoare{P}{(\Rec f(x)=e_2) e_1}{u.R}$, we have to show
       \begin{align}
         S \proves & \hoare{P}{e_1}{x.Q}, \label{exe4.12:1} \\
@@ -102,7 +102,7 @@
         \forall v. \hoare{\subst{Q}{x}{v}}{\subst{e_2}{x}{v}}{u.R}
       \end{align*}
       which is immediate from the second hypothsis.
-      
+
     \item Notice that $e_1; e_2$ is desugared to $\Let \_ = e_1 in e_2$, then
       \rulenamestyle{Ht-seq} is immediate from \rulenamestyle{Ht-let-det}.
   \end{enumerate}
@@ -112,7 +112,7 @@
   Recall we defined $\Lam x.e$ to be $\Rec f(x)=e$ where $f$ is some fresh variable.
   Show the following derived rule.
   \begin{mathpar}
-    \infer[Ht-beta] 
+    \infer[Ht-beta]
     {S \proves \hoare{P}{\subst{e}{x}{v}}{u.Q}}
     {S \proves \hoare{P}{(\Lam x.e)v}{u.Q}}
   \end{mathpar}
@@ -140,12 +140,12 @@
 \end{exercise}
 
 \begin{proof}
-  Apply \rulenamestyle{Ht-bind} with $Q := x = u \wedge Q$ to the goal, then we
+  Apply \rulenamestyle{Ht-bind} with $Q \equiv x = u \wedge Q$ to the goal, then we
   have to show
   \begin{align*}
     S \proves \forall v. \hoare{u = v \wedge \subst{Q}{x}{v}}{E[v]}{w. R}
   \end{align*}
-  
+
   Extract $u = v$ with \rulenamestyle{Ht-eq} and substitute $v$ with $u$ in the
   above entailment,
   \begin{align*}
@@ -172,13 +172,13 @@
 
 \begin{proof}
   \begin{enumerate}
-    \item \label{exe4.16.1} 
+    \item \label{exe4.16.1}
       Apply \rulenamestyle{Ht-bind-det} to the goal
       \begin{align}
         \hoare{\loc \gmapsto m}{\mapelem{\loc}{\deref{\loc} + 5}}
         {v.v = () * \loc \gmapsto (m + 5)} \label{exe4.16:1}
       \end{align}
-      
+
       Apply \rulenamestyle{Ht-bind-det} to \eqref{exe4.16:1},
       \begin{align}
         & \hoare{\loc \gmapsto m}{\deref{\loc} + 5}{v.v = v_1 * Q_1},
@@ -196,16 +196,16 @@
       \end{align}
 
       Then by \rulenamestyle{Ht-load}, \eqref{exe4.16:2a} holds for
-      $v_2 = m$ and $Q_2 := \loc \gmapsto m$, and \eqref{exe4.16:2b}
+      $v_2 = m$ and $Q_2 \equiv \loc \gmapsto m$, and \eqref{exe4.16:2b}
       becomes,
       \begin{align*}
         \hoare{\loc \gmapsto m}{m + 5}{v.v = v_1 * Q_1}.
       \end{align*}
-      By \rulenamestyle{Ht-op}, it holds for $v_1 = m + 5$ and $Q_1 := 
+      By \rulenamestyle{Ht-op}, it holds for $v_1 = m + 5$ and $Q_1 \equiv
       \loc \gmapsto m$. Then \eqref{exe4.16:3} becomes
       \begin{align*}
         & \hoare{\loc \gmapsto m}{\mapelem{\loc}{m + 5}}
-        {v.v = () * \loc \gmapsto (m + 5)} 
+        {v.v = () * \loc \gmapsto (m + 5)}
       \end{align*}
       which is obvious by \rulenamestyle{Ht-store}.
 
@@ -220,7 +220,7 @@
       \end{align}
 
       Similar to \ref{exe4.16.1}, \eqref{exe4.16:4} is immediate for
-      $v = m + 5$ and $R := \loc \gmapsto m * P$. Then \eqref{exe4.16:5}
+      $v = m + 5$ and $R \equiv \loc \gmapsto m * P$. Then \eqref{exe4.16:5}
       becomes
       \begin{align*}
         \hoare{P}{\subst{e}{x}{m + 5}}{v.Q} \proves &
@@ -240,7 +240,7 @@
       \begin{align*}
         \hoare{P}{\pi_1 (v_1, v_2)}{x.x = x_1 \wedge R}.
       \end{align*}
-      It is obvious by \rulenamestyle{Ht-proj} for $x_1 = v_1$ and $R := P$.
+      It is obvious by \rulenamestyle{Ht-proj} for $x_1 = v_1$ and $R \equiv P$.
       Then \eqref{exe4.16:7} becomes
       \begin{align*}
         \hoare{P}{\subst{e}{x}{v_1}}{v.Q} \proves &

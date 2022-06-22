@@ -11,6 +11,27 @@
 \usepackage{\basedir iris}
 \usepackage{\basedir heaplang}
 
+\usepackage{hyperref}
+
+\definecolor{StringRed}{rgb}{.637,0.082,0.082}
+\definecolor{CommentGreen}{rgb}{0.0,0.55,0.3}
+\definecolor{KeywordBlue}{rgb}{0.0,0.3,0.55}
+\definecolor{LinkColor}{rgb}{0.55,0.0,0.3}
+\definecolor{CiteColor}{rgb}{0.55,0.0,0.3}
+\definecolor{HighlightColor}{rgb}{0.0,0.0,0.0}
+
+\definecolor{grey}{rgb}{0.5,0.5,0.5}
+\definecolor{red}{rgb}{1,0,0}
+
+\hypersetup{%
+  linktocpage=true, pdfstartview=FitV,
+  breaklinks=true, pageanchor=true, pdfpagemode=UseOutlines,
+  plainpages=false, bookmarksnumbered, bookmarksopen=true, bookmarksopenlevel=3,
+  hypertexnames=true, pdfhighlight=/O,
+  colorlinks=true,linkcolor=LinkColor,citecolor=CiteColor,
+  urlcolor=LinkColor
+}
+
 \theoremstyle{definition}
 \newtheorem{example}{Example}
 \newtheorem{lem}{Lemma}

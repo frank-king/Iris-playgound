@@ -14,12 +14,12 @@ Come up with a counterexample to the above rule.
 
 \begin{proof}
   We have \[
-    S \proves 
+    S \proves
     \hoare{x \gmapsto 0 \wedge y \gmapsto 1}
     {\mapelem{y}{\deref{x}}}
     {v.v = \TT \wedge y \gmapsto 0},
   \] but not \[
-    S \proves 
+    S \proves
     \hoare{x \gmapsto 0 \wedge y \gmapsto 1 \wedge y \gmapsto 1}
     {\mapelem{y}{\deref{x}}}
     {v.v = \TT \wedge y \mapsto 0 \wedge y \gmapsto 1}.
@@ -28,7 +28,7 @@ Come up with a counterexample to the above rule.
 
 \begin{exercise}
   Prove \[
-    S \proves 
+    S \proves
     (\hoare{P}{e}{v.Q} \Ra \forall R: \Prop, \hoare{P * R}{e}{v.Q * R}).
   \]
 \end{exercise}
@@ -52,7 +52,7 @@ Come up with a counterexample to the above rule.
         \forall R: \Prop, \hoare{P * R}{e}{v.Q * R}
       }
     } {
-      \vctx\mid S \proves 
+      \vctx\mid S \proves
       (\hoare{P}{e}{v.Q} \Ra \forall R: \Prop, \hoare{P * R}{e}{v.Q * R})
     }.
   \end{mathpar}
@@ -64,10 +64,10 @@ Come up with a counterexample to the above rule.
 
 \begin{proof}
   It is obvious that the primary evaluation context of $3 + 4 + 5$ is $3 + 4$.
-  We must show $\hoare{\TRUE}{3 + 4}{w.Q}$ and 
+  We must show $\hoare{\TRUE}{3 + 4}{w.Q}$ and
   $\forall w. \hoare{Q}{w + 5}{w.w = 12}$ for some $Q$.
 
-  Let $Q := w = 7$, then these two proposition is immediate to prove.
+  Let $Q \equiv w = 7$, then these two proposition is immediate to prove.
 \end{proof}
 
 \begin{exercise}
@@ -85,7 +85,7 @@ Come up with a counterexample to the above rule.
 \end{proof}
 
 \begin{exercise}
-  Use the intuitive reading of Hoare triples to explain why the above rules are 
+  Use the intuitive reading of Hoare triples to explain why the above rules are
   sound.
   \begin{mathpar}
     \inferB[Ht-disj] {
@@ -102,7 +102,7 @@ Come up with a counterexample to the above rule.
 
 % \begin{proof}
   \hspace*{-2em} \textit{Proof.}
-  Firstly, consider rule \rulenamestyle{Ht-disj}, the direction from top to 
+  Firstly, consider rule \rulenamestyle{Ht-disj}, the direction from top to
   bottom.
 
   The hypothses tell us, that for any precondition $P$, after execution of $e$,
@@ -117,8 +117,8 @@ Come up with a counterexample to the above rule.
   In the precondition, $P \vee Q$ (i.e., either $P$ or $Q$ holds) proves
   the postcondition $v.R$, then separately, both of $P$ and $Q$ as a precondition
   in alone, should prove the postcondition $v.R$.
-  
-  Secondly, consider rule \rulenamestyle{Ht-exist}, the direction from top to 
+
+  Secondly, consider rule \rulenamestyle{Ht-exist}, the direction from top to
   bottom.
 
   The hypothsis tells us, that for all $x$, for any precondition $P$, after
@@ -154,8 +154,8 @@ Come up with a counterexample to the above rule.
   Hint: What if $e$ and $e_1$ read or write to the same location?
 
   The problem is that we know nothing about the behaviour of $e_1$. But we can
-  specify its behaviour using Hoare triples. Come up with some propositions 
-  $P_1$ and $P_2$ or some conditions on $P_1$ and $P_2$ such that the following 
+  specify its behaviour using Hoare triples. Come up with some propositions
+  $P_1$ and $P_2$ or some conditions on $P_1$ and $P_2$ such that the following
   rule
   \begin{mathpar}
     \infer{
@@ -173,9 +173,9 @@ Come up with a counterexample to the above rule.
     \infer{S \proves \hoare{P}{e}{v.Q}}
     {S \proves \hoare{P}{\pi_1(e, u)}{v.Q}}
   \end{mathpar}
-  
+
   Applying \rulenamestyle{Ht-bind} to the goal $S \proves \hoare{P}{\pi_1(e, u)}
-  {v.Q}$, we have to show 
+  {v.Q}$, we have to show
   \begin{align}
     S \proves & \hoare{P}{(e, u)}{v_1.Q_1}, \label{exe4.8:1} \\
     S \proves & \hoare{\subst{Q_1}{v_1}{u_1}}{\pi_1 u_1}{v.Q}, \label{exe4.8:2}
@@ -189,8 +189,8 @@ Come up with a counterexample to the above rule.
   \end{align}
   for some $Q_2$.
 
-  From the hypothesis $S \proves \hoare{P}{e}{v.Q}$, \eqref{exe4.8:3} is immediate 
-  for $Q_2 := \subst{Q}{v}{v_2}$. Then \eqref{exe4.8:4} becomes
+  From the hypothesis $S \proves \hoare{P}{e}{v.Q}$, \eqref{exe4.8:3} is immediate
+  for $Q_2 \equiv \subst{Q}{v}{v_2}$. Then \eqref{exe4.8:4} becomes
   \begin{align}
     S \proves & \hoare{\subst{Q}{v}{u_2}}{(u_2, u)}{v_1.Q_1}.
     \tag{\ref{exe4.8:4}a} \label{exe4.8:4a}
@@ -200,14 +200,14 @@ Come up with a counterexample to the above rule.
   \begin{align*}
     S \proves & \hoare{\TRUE}{(u_2, u)}{v_1.v_1 = (u_2, u)},
   \end{align*}
-  by \rulenamestyle{Ht-ret}, which derives 
+  by \rulenamestyle{Ht-ret}, which derives
   \begin{align}
-    S \proves & 
+    S \proves &
     \hoare{\TRUE * \subst{Q}{v}{u_2}}{(u_2, u)}
     {v_1.v_1 = (u_2, u) * \subst{Q}{v}{u_2}},
     \tag{\ref{exe4.8:4}b} \label{exe4.8:4b}
   \end{align}
-  by \rulenamestyle{Ht-frame}. Hence, \eqref{exe4.8:4a} is reached for $Q_1 :=
+  by \rulenamestyle{Ht-frame}. Hence, \eqref{exe4.8:4a} is reached for $Q_1 \equiv
   v_1 = (u_2, u) * \subst{Q}{v}{u_2}$.
 
   Now we only have to show the remained \eqref{exe4.8:2}, which becomes
@@ -235,15 +235,15 @@ Come up with a counterexample to the above rule.
   \end{align*}
   Apparently, \eqref{exe:4.8:2b} is derivable using \rulenamestyle{Ht-csq}.
 
-  \item Now we show that rule 
+  \item Now we show that rule
   \begin{mathpar}
     \infer{S \proves \hoare{P}{e}{v.Q}}
     {S \proves \hoare{P}{\pi_1(e, e_1)}{v.Q}}
   \end{mathpar}
   is invalid by a counterexample.
 
-  Let $P := \loc \gmapsto 0$, $e := \mapelem{\loc}{0}$, $e_1 := 
-  \mapelem{\loc}{1}$, and $Q := v = () \wedge \loc \gmapsto 0$.
+  Let $P \equiv \loc \gmapsto 0$, $e \equiv \mapelem{\loc}{0}$, $e_1 \equiv
+  \mapelem{\loc}{1}$, and $Q \equiv v = () \wedge \loc \gmapsto 0$.
 
   It is obvious that $\hoare{P}{e}{v.Q}$ holds but $\hoare{P}{\pi_1(e, e_1)}{v.Q}$
   not, since \[
@@ -261,19 +261,19 @@ Come up with a counterexample to the above rule.
   hold.
 
   The idea is that, the expression $(e, e_1)$ is evaluated sequentially,
-  first $e$ then $e_1$, and $\pi_1(e, e_1)$ selects the evaluation result of 
-  $e$, so the evaluation result of $e_1$ doesn't matter, and it can refer 
+  first $e$ then $e_1$, and $\pi_1(e, e_1)$ selects the evaluation result of
+  $e$, so the evaluation result of $e_1$ doesn't matter, and it can refer
   to the resource claimed by $Q$ but it must not mutate it.
 
-  Such $P_1$ and $P_2$ can be $P_1 := \exists v. Q$ and $P_2 := Q$.
+  Such $P_1$ and $P_2$ can be $P_1 \equiv \exists v. Q$ and $P_2 \equiv Q$.
 
   First, apply \rulenamestyle{Ht-bind} to the goal $S \proves \hoare{P}
-  {\pi_1(e, e_1)}{v.Q}$, 
+  {\pi_1(e, e_1)}{v.Q}$,
   \begin{align}
     S \proves & \hoare{\subst{Q}{v}{u_2}}{(u_2, e_1)}{v_1.Q_1}, \label{exe4.8:5} \\
     S \proves & \hoare{\subst{Q_1}{v_1}{u_1}}{\pi_1 u_1}{v.Q}. \label{exe4.8:6}
   \end{align}
-  
+
   Then apply \rulenamestyle{Ht-bind} to \eqref{exe4.8:5},
   \begin{align}
     S \proves & \hoare{\subst{Q}{v}{u_2}}{e_1}{w_1.R_1}, \label{exe4.8:7} \\
@@ -286,14 +286,14 @@ Come up with a counterexample to the above rule.
     S \proves & \hoare{Q}{e_1}{v.Q}.
   \end{align*}
 
-  Let 
+  Let
   \begin{align*}
-    Q_1 := & v = u_2 * v_1 = (u_2, w_2) * \subst{Q}{v}{u_2}, \\
-    R_1 := & w_1 = u_2 * \subst{Q}{v}{u_2},
+    Q_1 \equiv & v = u_2 * v_1 = (u_2, w_2) * \subst{Q}{v}{u_2}, \\
+    R_1 \equiv & w_1 = u_2 * \subst{Q}{v}{u_2},
   \end{align*}
   then \eqref{exe4.8:6}, \eqref{exe4.8:7} and \eqref{exe4.8:8} become
   \begin{align}
-    S \proves & 
+    S \proves &
     \hoare{v = u_2 * u_1 = (u_2, w_2) * \subst{Q}{v}{u_2}}{\pi_1 u_1}{v.Q},
     \tag{\ref{exe4.8:6}a} \label{exe4.8:6a} \\
     %
@@ -304,21 +304,21 @@ Come up with a counterexample to the above rule.
     {v_1.v = u_2 * v_1 = (u_2, w_2) * \subst{Q}{v}{u_2}}.
     \tag{\ref{exe4.8:8}a} \label{exe4.8:8a}
   \end{align}
-  
+
   \eqref{exe4.8:7a} is immediate from the second hypothesis.
 
   Substitute \eqref{exe4.8:6a} with $u_1 = (u_2, w_2)$ and $v = u_2$, and
   substitute \eqref{exe4.8:8a} with $w_2 = u_2$,
   \begin{align}
-    S \proves & 
+    S \proves &
     \hoare{Q}{\pi_1 (v, w_2)}{v.Q}, \tag{\ref{exe4.8:6}b} \label{exe4.8:6b} \\
     S \proves & \hoare{\subst{Q}{v}{u_2}}{(u_2, u_2)}
     {v_1.v = u_2 * v_1 = (u_2, u_2) * \subst{Q}{v}{u_2}}.
     \tag{\ref{exe4.8:8}b} \label{exe4.8:8b}
   \end{align}
 
-  \eqref{exe4.8:6b} is immediate by \rulenamestyle{Ht-proj}, and 
-  \eqref{exe4.8:8b} is immediate by \rulenamestyle{Ht-ret} and 
+  \eqref{exe4.8:6b} is immediate by \rulenamestyle{Ht-proj}, and
+  \eqref{exe4.8:8b} is immediate by \rulenamestyle{Ht-ret} and
   \rulenamestyle{Ht-frame}.
   \end{enumerate}
 \end{proof}
@@ -339,7 +339,7 @@ Come up with a counterexample to the above rule.
       \hoare{P * v = \False}{\If v then e_2 \Else e_3}{u.Q}
     }
   \end{mathpar}
-  Derive \rulenamestyle{Ht-If-True} and \rulenamestyle{Ht-If-False} from 
+  Derive \rulenamestyle{Ht-If-True} and \rulenamestyle{Ht-If-False} from
   \rulenamestyle{Ht-If}.
 \end{exercise}
 
@@ -367,14 +367,15 @@ Come up with a counterexample to the above rule.
 \end{proof}
 
 \begin{exercise}
+  \label{exe:4.10}
   Show the following derived rule for any expression $e$ and $i \in \{1, 2\}$.
   \begin{mathpar}
     \infer {
-      S \proves \hoare{P}{e}{v.v = \textlog{inj}_i u * Q} \and
-      S \proves \hoare{\subst{Q}{v}{\textlog{inj}_i u}}{\subst{e_i}{x_i}{u}}{v.R}
+      S \proves \hoare{P}{e}{v.v = \Inj_i u * Q} \and
+      S \proves \hoare{\subst{Q}{v}{\Inj_i u}}{\subst{e_i}{x_i}{u}}{v.R}
     } {
       S \proves \hoare{P}
-      {\Match e with \textlog{inj}_1 x_1 => e_1 | \textlog{inj}_2 x_2 => e_2 end}
+      {\Match e with \Inj_1 x_1 => e_1 | \Inj_2 x_2 => e_2 end}
       {v.R}
     }
   \end{mathpar}
@@ -385,3 +386,8 @@ Come up with a counterexample to the above rule.
 \end{proof}
 
 \input{chpt4.1}
+\input{chpt4.2}
+
+\subsection{Abstract Data Types}
+
+Exercises of this section are done in Coq.

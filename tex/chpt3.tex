@@ -9,7 +9,7 @@ Following the example above derive the following two rules:
 \begin{mathpar}
   \infer
   {x \not\in \mathrm{FV}(P)}
-  {P * \exists x. \Phi \provesIff \exists x. P * \Phi}  
+  {P * \exists x. \Phi \provesIff \exists x. P * \Phi}
   \and
   \infer
   {x \not\in \mathrm{FV}(P)}
@@ -24,8 +24,8 @@ Let's prove these two rules one by one, and direction by direction.
 \begin{enumerate}
 \item The direction from left to right:
   \begin{mathpar}
-    \infern{$\wand$E} { 
-      \inferN{$\exists$E} { 
+    \infern{$\wand$E} {
+      \inferN{$\exists$E} {
         \inferN{$\wand$I} {
           \inferN{$\exists$I} {
             \vctx, x: \type \mid P * \Phi \proves P * \Phi \and
@@ -42,9 +42,9 @@ Let's prove these two rules one by one, and direction by direction.
 
   The direction from right to left:
   \begin{mathpar}
-    \infern{$\exists$E} { 
+    \infern{$\exists$E} {
       \inferN{$*$-mono} {
-        \inferN{$\exists$I} { 
+        \inferN{$\exists$I} {
           \vctx, x: \type \mid \Phi \proves \Phi \and
           \vctx, x: \type \proves \wtt{x}{\type}
         } {\vctx, x: \type \mid \Phi \proves \exists x: \type. \Phi}
@@ -59,13 +59,13 @@ Let's prove these two rules one by one, and direction by direction.
   \end{mathpar}
   It can be derived by
   \begin{mathpar}
-    \infern{$\Ra$E} { 
+    \infern{$\Ra$E} {
       \infern{Cut} {
         \infern{$\wedge$ER}
         {\inferN{Asm} { } {\prop \wedge \propB \proves \prop \wedge \propB}}
         {\prop \wedge \propB \proves \propB} \and
         \propB \proves \prop \Ra \propC
-      } {\prop \wedge \propB \proves \prop \Ra \propC} 
+      } {\prop \wedge \propB \proves \prop \Ra \propC}
       \and
       \inferN{$\wedge$EL}
       {\inferN{Asm} { } {\prop \wedge \propB \proves \prop \wedge \propB}}
@@ -105,8 +105,8 @@ Let's prove these two rules one by one, and direction by direction.
     \infern{$\exists$E} {
       \inferN{$\wedge$I} {
         \infern{$\wedge$EL}{}{\vctx, x: \type \mid P \wedge \Phi \proves P} \and
-        \inferN{$\exists$I} { 
-          \infern{$\wedge$ER}{}{\vctx, x: \type \mid P \wedge \Phi \proves \Phi} 
+        \inferN{$\exists$I} {
+          \infern{$\wedge$ER}{}{\vctx, x: \type \mid P \wedge \Phi \proves \Phi}
           \and
           \vctx, x: \type \proves \wtt{x}{\type}
         } {\vctx, x: \type \mid P \wedge \Phi \proves\exists x: \type. \Phi}

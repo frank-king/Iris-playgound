@@ -1,0 +1,664 @@
+\subsection{Reasoning about Mutable Data Structures}
+\setcounter{exercise}{18}
+
+\begin{exercise}
+  Explain why the separating conjunction ensures lists are acyclic. What goes
+  wrong if we used ordinary conjunction?
+  \begin{align*}
+    \textlog{isList}\, l\, [] & \equiv l = \Inj_1\, () \\
+    \textlog{isList}\, l\, (x :: xs) & \equiv \exists hd, l'.
+    l = \Inj_2\,(hd) * hd \gmapsto (x, l') * \textlog{isList}\, l'\, xs
+  \end{align*}
+\end{exercise}
+
+\begin{proof}
+  By induction on $xs$, we show that the list $l$ is acyclic, for each node in the
+  list, i.e. except its previous node (if present), there are no other nodes point
+  to it.
+
+  For the first case that $xs = []$, it is trivally acyclic.
+
+  Then the second case where $xs = x :: xs'$ is interesting. We must show $l$ is
+  acyclic with the induction hypothesis that the all but first node as a sublist
+  $l'$ of $l$ is acyclic.
+
+  The ``isList'' predicate is conjected by 3 separated propositions $l =
+  \Inj_2(hd)$, $hd \gmapsto (x, l')$ and $\textlog{isList}\, l'\, xs'$.
+
+  The first proposition tells that the list is not empty, the second proposition
+  tells that it points to a head element $x$ and the remainder of the list $l'$,
+  and the third proposition tells that the remainder of the list is also a list.
+
+  From the second propsition we know that there cannot be another node in the list
+  points to it because of the points-to predicate $\gmapsto$ is exclusive.
+
+  From the third propsition and by the induciton hypothesis, we know that $l'$ is
+  acyclic. Put them together, we are confident to claim that the whole list $l$ is
+  acyclic.
+
+  If we use ordinary conjunctions, we cannot guarantee that for any node in the
+  list, there are no nodes other than its previous node point to it, so it might
+  be cyclic.
+\end{proof}
+
+\setcounter{exercise}{19}
+\begin{exercise}
+  Let $\textlog{inc}$ denote the following program that increments all values in a
+  linked list of integers:
+  \begin{align*}
+    \Rec \textlog{inc}(l)= \MatchML l with
+    \Inj_1\, x_1=>()
+    | \Inj_2\, x_2=>
+    \begin{array}[t]{l}
+      \Let h=\pi_1 \deref{x_2} in \\
+      \Let t=\pi_2 \deref{x_2} in \\
+      \mapelem{x_2}{(h + 1, t)}; \\
+      \textlog{inc}\, t
+    \end{array}
+    end {}
+  \end{align*}
+  Prove this Hoare triple in detail using the rules just mentioned
+  \begin{align*}
+    \forall xs. \forall l. \hoare{\textlog{isList}\, l\, xs}{\textlog{inc}\, l}
+    {v.v = () \wedge \textlog{isList}\, l\, (\textlog{map}\, (1+)\, xs)}
+  \end{align*}
+  where $\textlog{map}$ is defined by
+  \begin{align*}
+    \textlog{map}\, f & \equiv [] \\
+    \textlog{map}\, (x :: xs) & \equiv f x :: \textlog{map}\, f\, xs
+  \end{align*}
+\end{exercise}
+
+\begin{proof}
+  Apply \rulenamestyle{Ht-rec},
+  \begin{align}
+    & \forall xs. \forall l. \hoare{\textlog{isList}\, l\, xs}{f\, l}
+    {v.v = () \wedge \textlog{isList}\, l\, (\textlog{map}\, (1+)\, xs)} \proves
+    \notag \\
+    & \forall xs. \forall l. \hoare{\textlog{isList}\, l\, xs}
+    {\MatchDots l with...end}
+    {v.v = () \wedge \textlog{isList}\, l\, (\textlog{map}\, (1+)\, xs)}
+    \label{exe4.20:1}
+  \end{align}
+  where the body of $\MatchDots l with...end$ has been substituted by $f$.
+
+  There are two cases of $xs$, let's talk about them one by one.
+  \begin{enumerate}
+    \item $xs = []$, then $\textlog{isList}\, l\, [] \equiv l =
+      \Inj_1\, ()$, and $\textlog{isList}\, l\,
+      (\textlog{map}\, (1+)\, xs) \equiv \textlog{isList}\, l\, [] \equiv
+      l = \Inj_1\, ()$. We have to show
+      \begin{align}
+        \forall l. \hoare{l = \Inj_1\, ()}{\MatchDots l with...end}
+        {v.v = () \wedge l = \Inj_1\, ()}
+        \tag{\ref{exe4.20:1}a} \label{4.20:1a}
+      \end{align}
+      Then apply \rulenamestyle{Ht-eq} and \rulenamestyle{Eq} to substitute $l$,
+      \begin{align*}
+        \hoare{\TRUE}{
+          \Match \Inj_1\, () with
+          \Inj_1\, x_1 => () | \Inj_2\, x_2 => \ldots end
+        } {v.v = ()}
+      \end{align*}
+
+      Apply \rulenamestyle{Ht-match},
+      \begin{align*}
+        \hoare{\TRUE}{()} {v.v = ()}
+      \end{align*}
+      which is immediate from \rulenamestyle{Ht-ret}.
+
+    \item $xs = x :: xs' $, then
+      \begin{align*}
+        \textlog{isList}\, l\, x :: xs' & \equiv
+        \exists hd, l'. l = \Inj_2\,(hd) * hd \gmapsto (x, l') *
+        \textlog{isList}\, l'\, xs', \\
+        \textlog{isList}\, l\, (\textlog{map}\, (1+)\, xs) & \equiv
+        \textlog{isList}\, l\, (1 + x) :: \textlog{map}\, (1+)\, xs' \\ & \equiv
+        \exists hd, l'. l = \Inj_2\,(hd) * hd \gmapsto (1 + x, l') *
+        \textlog{isList}\, l'\, \textlog{map}\, (1+)\, xs'.
+      \end{align*}
+      We have to show
+      \begin{align}
+        \forall xs. \forall l. & \hoare{\textlog{isList}\, l\, xs}{f\, l}
+        {v.v = () \wedge \textlog{isList}\, l\, (\textlog{map}\, (1+)\, xs)} \proves
+        \notag \\
+        \forall l. & \hoareV[t]{\exists hd, l'. l = \Inj_2\,(hd) *
+        hd \gmapsto (x, l') * \textlog{isList}\, l'\, xs'}
+        {\MatchDots l with...end}
+        {v.v = () \wedge \exists hd, l'. \left(
+        \begin{array}[c]{l}
+          l = \Inj_2\, (hd) * \\
+          hd \gmapsto (1 + x, l') * \\
+          \textlog{isList}\, l'\, \textlog{map}\, (1+)\, xs'
+        \end{array}
+        \right)}
+        \tag{\ref{exe4.20:1}b} \label{4.20:1b}
+      \end{align}
+
+      Then apply \rulenamestyle{Ht-exist}, \rulenamestyle{Ht-eq} and
+      \rulenamestyle{Eq} to substitute $l$,
+      \begin{align*}
+        \forall xs. \forall l. & \hoare{\textlog{isList}\, l\, xs}{f\, l}
+        {v.v = () \wedge \textlog{isList}\, l\, (\textlog{map}\, (1+)\, xs)} \proves
+        \notag \\
+        \forall hd, l'. & \hoareV[t]{hd \gmapsto (x, l') *
+        \textlog{isList}\, l'\, xs'}
+        {\Match \Inj_2\, (hd) with
+          \Inj_1\, x_1 => () | \Inj_2\, x_2 => \ldots end}
+        {v.v = () \wedge hd \gmapsto (1 + x, l') *
+        \textlog{isList}\, l'\, \textlog{map}\, (1+)\, xs'}
+      \end{align*}
+
+
+      Apply \rulenamestyle{Ht-match},
+      \begin{align*}
+        \forall xs. \forall l. & \hoare{\textlog{isList}\, l\, xs}{f\, l}
+        {v.v = () \wedge \textlog{isList}\, l\, (\textlog{map}\, (1+)\, xs)} \proves
+        \notag \\
+        \forall hd, l'. & \hoareV[t]{hd \gmapsto (x, l') *
+        \textlog{isList}\, l'\, xs'}
+        {
+          \begin{array}[c]{l}
+            \Let h=\pi_1 \deref{hd} in \\
+            \Let t=\pi_2 \deref{hd} in \\
+            \mapelem{x_2}{(h + 1, t)}; \\
+            f\, t
+          \end{array}
+        }
+        {v.v = () \wedge hd \gmapsto (1 + x, l') *
+        \textlog{isList}\, l'\, \textlog{map}\, (1+)\, xs'}
+      \end{align*}
+
+      Apply \rulenamestyle{Ht-let-det} twice,
+      \begin{align*}
+        \forall xs. \forall l. & \hoare{\textlog{isList}\, l\, xs}{f\, l}
+        {v.v = () \wedge \textlog{isList}\, l\, (\textlog{map}\, (1+)\, xs)} \proves
+        \notag \\
+        \forall hd, l'. & \hoareV[t]{hd \gmapsto (x, l') *
+        \textlog{isList}\, l'\, xs'}
+        {\mapelem{x_2}{(x + 1, l')}; f\, l'}
+        {v.v = () \wedge hd \gmapsto (1 + x, l') *
+        \textlog{isList}\, l'\, \textlog{map}\, (1+)\, xs'}
+      \end{align*}
+
+      With no doubt, it can be derived by applying \rulenamestyle{Ht-load}
+      and \rulenamestyle{Ht-store}.
+  \end{enumerate}
+\end{proof}
+
+\setcounter{exercise}{22}
+\begin{exercise}
+  Derive the rule \rulenamestyle{Ht-Rec-multi}.
+  \begin{mathpar}
+    \infer[Ht-Rec-multi] {
+      \vctx, g: \Val \mid S \wedge \forall z. \forall v_1. \forall v_2.
+      \hoare{P}{g(v_1 , v_2)}{u.Q} \proves \forall z. \forall v_1 . \forall v_2.
+      \hoare{P}{\subst{\subst{\subst{e}{f}{g}}{x}{v_1}}{y}{v_2}}{u.Q}
+    } {
+      \vctx \mid S \proves \forall z. \forall v.
+      \hoare{\exists v_1 , v_2. v = (v_1, v_2) \wedge P}{(\Rec f(x, y)=e) v}
+      {u. \exists v_1, v_2. v = (v_1, v_2) \wedge Q}
+    }
+  \end{mathpar}
+  where $\Rec f(x, y)=e$ is the syntax sugar of
+  \begin{align*}
+    \Rec f(p)=\Let x=\pi_1\, p in \Let y=\pi_2\, in e.
+  \end{align*}
+  and we assume that the variable $v$ is fresh for $P$ and $Q$
+\end{exercise}
+
+\begin{proof}
+  Apply \rulenamestyle{Ht-exist}, \rulenamestyle{Ht-rec} and
+  \rulenamestyle{$\forall$I},
+  \begin{align*}
+    \vctx, g, v: \Val \mid S \wedge \forall z. \forall v_1. \forall v_2
+    & \hoare{v = (v_1, v_2) \wedge P}{g\, v}
+    {u.\exists v_1, v_2. v = (v_1, v_2) \wedge Q} \proves \\
+    \forall z. \forall v_1. \forall v_2
+    & \hoareV[t]{v = (v_1, v_2) \wedge P}
+    {\Let x=\pi_1\, v in \Let y=\pi_2\, v in \subst{e}{f}{g}}
+    {u. \exists v_1, v_2. v = (v_1, v_2) \wedge Q}
+  \end{align*}
+
+  Apply \rulenamestyle{Ht-Ht}, \rulenamestyle{Ht-eq-pre}, and \rulenamestyle{Ht-Ht}
+  again, then omit the trivial $\exists v_1', v_2'. (v_1, v_2) = (v_1', v_2')$,
+  \begin{align*}
+    \vctx, g: \Val \mid S \wedge \forall z. \forall v_1. \forall v_2
+    & \hoare{P}{g\, (v_1, v_2)} {u.Q} \proves \\
+    \forall z. \forall v_1. \forall v_2 & \hoare{P}
+    {\Let x=\pi_1\, (v_1, v_2) in \Let y=\pi_2\, (v_1, v_2) in \subst{e}{f}{g}}
+    {u.Q}
+  \end{align*}
+  From now on, we omit the context and asumption of the above entailment,
+  since they are the same as those in the hypothesis.
+
+  Apply \rulenamestyle{Ht-let-det}, \rulenamestyle{Ht-proj} and
+  \rulenamestyle{Ht-frame},
+  \begin{align*}
+    \forall z. \forall v_1. \forall v_2 & \hoare{P}
+    {\Let y=\pi_2\, (v_1, v_2) in \subst{\subst{e}{f}{g}}{x}{v_1}}{u.Q}
+  \end{align*}
+  Again,
+  \begin{align*}
+    \forall z. \forall v_1. \forall v_2 & \hoare{P}
+    {\subst{\subst{\subst{e}{f}{g}}{x}{v_1}}{y}{v_2}}{u.Q}
+  \end{align*}
+  which is immediate from the hypothsis.
+\end{proof}
+
+\begin{exercise}
+  Let $\textlog{append}$ be the following function, which takes two linked lists
+  as arguments and returns a list which is the concatenation of the two.
+  \begin{align*}
+    \Rec \textlog{append}(l,l')=\MatchML l with
+    \Inj_1\, x_1=>l'
+    | \Inj_2\, x_2=>
+    \begin{array}[t]{l}
+      \Let p=\deref{x_2} in \\
+      \Let r=\textlog{append}\, (\pi_2\, p)\, l' in \\
+      \mapelem{x_2}{(\pi_1\, p, r)}; \\
+      \Inj_2\, x_2
+    \end{array}
+    end {}
+  \end{align*}
+  We wish to give it the following specification where $\dplus$ is append on
+  mathematical sequences.
+  \begin{align*}
+    \forall xs, ys, l, l'.
+    \hoare{\textlog{isList}\, l\, xs * \textlog{isList}\, l' ys}
+    {\textlog{append}\, l\, l'}{v. \textlog{isList}\, v\, (xs \dplus ys)}.
+  \end{align*}
+  \begin{itemize}
+    \item Prove the specification.
+    \item Is the following specification also valid?
+      \begin{align*}
+        \forall xs, ys, l, l'.
+        \hoare{\textlog{isList}\, l\, xs \wedge \textlog{isList}\, l'\, ys}
+        {\textlog{append}\, l\, l'}{v. \textlog{isList}\, v\, (xs \dplus ys)}
+      \end{align*}
+      Hint: Think about what is the result of $\textlog{append}\, l\, l'$.
+  \end{itemize}
+\end{exercise}
+
+\begin{proof}
+  \begin{itemize}
+    \item It is trivial to derive this rule from \rulenamestyle{Ht-rec-multi},
+      \begin{align*}
+        \infer[Ht-Rec-multi$'$] {
+          \vctx, g: \Val \mid S \wedge \forall z. \forall v_1. \forall v_2.
+          \hoare{P}{g(v_1 , v_2)}{u.Q} \proves \forall z. \forall v_1 . \forall v_2.
+          \hoare{P}{\subst{\subst{\subst{e}{f}{g}}{x}{v_1}}{y}{v_2}}{u.Q}
+        } {
+          \vctx \mid S \proves \forall z. \forall v_1. \forall v_2.
+          \hoare{P}{(\Rec f(x, y)=e)\, v_1\, v_2}{u. Q}
+        }
+      \end{align*}
+      Then apply it to the goal,
+      \begin{align*}
+        \vctx, g: \Val \mid \forall xs, ys, l, l'. &
+        \hoare{\textlog{isList}\, l\, xs * \textlog{isList}\, l' ys}
+        {g\, l\, l'}{v. \textlog{isList}\, v\, (xs \dplus ys)} \\
+        \proves \forall xs, ys, l, l'. &
+        \hoareV[t]{\textlog{isList}\, l\, xs * \textlog{isList}\, l' ys} {
+          \MatchML l with
+          \Inj_1\, x_1=>l'
+          | \Inj_2\, x_2=>
+          \begin{array}[t]{l}
+            \Let p=\deref{x_2} in \\
+            \Let r=g\, (\pi_2\, p)\, l' in \\
+            \mapelem{x_2}{(\pi_1\, p, r)}; \\
+            \Inj_2\, x_2
+          \end{array}
+          end {}
+        } {v. \textlog{isList}\, v\, (xs \dplus ys)}
+      \end{align*}
+      We omit the assumption to reduce verboseness, and consider the two cases
+      of $xs$ in $\textlog{isList}$.
+      \begin{align}
+        & \forall ys, l, l'.
+        \hoare{l = \Inj_1\, () * \textlog{isList}\, l' ys}
+        {\MatchDots l with...end} {v. \textlog{isList}\, v\, ys}
+        \label{exe4.24:1} \\
+        & \forall x, xs', hd, l_1, ys, l, l'.
+        \hoareV[t]
+        {l = \Inj_2\, (hd) * hd \gmapsto (x, l_1) *
+        \textlog{isList}\, l_1\, xs' * \textlog{isList}\, l' ys}
+        {\MatchDots l with...end} {v. \textlog{isList}\, v\, (x :: xs' \dplus ys)}
+        \label{exe4.24:2}
+      \end{align}
+      Apply \rulenamestyle{$\forall$I} and \rulenamestyle{Ht-eq-pre} to eliminate
+      $l$,
+      \begin{align}
+        & \forall ys, l'.  \hoare{\textlog{isList}\, l' ys}
+        {\MatchDots \Inj_1\, ()  with...end}
+        {v. \textlog{isList}\, v\, ys}
+        \tag{\ref{exe4.24:1}a} \label{exe4.24:1a} \\
+        & \forall x, xs', hd, l_1, ys, l'.
+        \hoareV[t]{hd \gmapsto (x, l_1) *
+        \textlog{isList}\, l_1\, xs' * \textlog{isList}\, l' ys}
+        {\MatchDots \Inj_2\, (hd)  with...end}
+        {v. \textlog{isList}\, v\, (x :: xs' \dplus ys)}
+        \tag{\ref{exe4.24:2}a} \label{exe4.24:2a}
+      \end{align}
+
+      Then apply \rulenamestyle{Ht-match} to extract the arms in $\langkw{match}$,
+      \begin{align}
+        & \forall ys, l'.
+        \hoare{\textlog{isList}\, l' ys}{l'}{v. \textlog{isList}\, v\, ys}
+        \tag{\ref{exe4.24:1}b} \label{exe4.24:1b} \\
+        & \forall x, xs', hd, l_1, ys, l'.\
+        \hoareV[t]{hd \gmapsto (x, l_1) *
+        \textlog{isList}\, l_1\, xs' * \textlog{isList}\, l' ys} {
+          \begin{array}[t]{l}
+            \Let p=\deref{hd} in \\
+            \Let r=g\, (\pi_2\, p)\, l' in \\
+            \mapelem{hd}{(\pi_1\, p, r)}; \\
+            \Inj_2\, hd
+          \end{array}
+        } {v. \textlog{isList}\, v\, (x :: xs' \dplus ys)}
+        \tag{\ref{exe4.24:2}b} \label{exe4.24:2b}
+      \end{align}
+
+      \eqref{exe4.24:1b} is obvious by applying \rulenamestyle{Ht-frame},
+      \rulenamestyle{Ht-ret} and the induction hypothesis.
+
+      Apply \rulenamestyle{Ht-let-det}, \rulenamestyle{Ht-load} and
+      \rulenamestyle{Ht-eq-ref} on \eqref{exe4.24:2b} to eliminate $p$,
+      \begin{align*}
+        \forall x, xs', hd, l_1, ys, l'.
+        \hoareV[t]{hd \gmapsto (x, l_1) *
+        \textlog{isList}\, l_1\, xs' * \textlog{isList}\, l' ys} {
+          \begin{array}[t]{l}
+            \Let r=g\, (\pi_2\, (x, l_1))\, l' in \\
+            \mapelem{hd}{(\pi_1\, (x, l_1), r)}; \\
+            \Inj_2\, hd
+          \end{array}
+        } {v. \textlog{isList}\, v\, (x :: xs' \dplus ys)}
+      \end{align*}
+
+      Again, apply \rulenamestyle{Ht-let-det}, \rulenamestyle{Ht-bind-det},
+      \rulenamestyle{Ht-proj}, \rulenamestyle{Ht-eq-ref} to eliminate $r$,
+      \begin{align*}
+        \forall x, xs', hd, l_1, ys, l'.
+        \hoareV[t]{hd \gmapsto (x, l_1) *
+        \textlog{isList}\, l_1\, xs' * \textlog{isList}\, l' ys}
+        {\mapelem{hd}{(\pi_1\, (x, l_1), (g\, l_1\, l'))}; \Inj_2\, hd}
+        {v. \textlog{isList}\, v\, (x :: xs' \dplus ys)}
+      \end{align*}
+
+      Apply \rulenamestyle{Ht-bind-det} and \rulenamestyle{Ht-proj} to eliminate
+      $\pi_1\, (x, l_1)$, and apply \rulenamestyle{Ht-bind} to eliminate $g\, l_1,
+      l'$. Note that we cannot elimitate $g$ immediately because we don't know the
+      value after executing it.
+      \begin{align}
+        \forall x, xs', hd, l_1, ys, l'. &
+        \hoare{hd \gmapsto (x, l_1) *
+        \textlog{isList}\, l_1\, xs' * \textlog{isList}\, l' ys}
+        {g\, l_1\, l'}{u. P}
+        \tag{\ref{exe4.24:2}c} \label{exe4.24:2c} \\
+        \forall x, xs', hd, l_1, ys, u. &
+        \hoare{P}{\mapelem{hd}{(x, u)}; \Inj_2\, hd}
+        {v. \textlog{isList}\, v\, (x :: xs' \dplus ys)}
+        \tag{\ref{exe4.24:2}d} \label{exe4.24:2d}
+      \end{align}
+
+      By the induction hypothesis and \rulenamestyle{Ht-frame}, we know that
+      \eqref{exe4.24:2c} holds for $P \equiv hd \gmapsto (x, l_1) *
+      \textlog{isList}\, u\, (xs' \dplus ys)$. So \eqref{exe4.24:2d} becomes
+      \begin{align*}
+        \forall x, xs', hd, l_1, ys, u. &
+        \hoareV[t]{hd \gmapsto (x, l_1) * \textlog{isList}\, u\, (xs' \dplus ys)}
+        {\mapelem{hd}{(x, u)}; \Inj_2\, hd}
+        {v. \textlog{isList}\, v\, (x :: xs' \dplus ys)}
+      \end{align*}
+
+      Apply \rulenamestyle{Ht-store} and \rulenamestyle{Ht-Seq},
+      \begin{align*}
+        \forall x, xs', hd, l_1, ys, v. &
+        \hoareV[t]{hd \gmapsto (x, u) * \textlog{isList}\, u\, (xs' \dplus ys)}
+        {\Inj_2\, hd}
+        {v. v = \Inj_2\, hd \wedge
+        \textlog{isList}\, v\, (x :: xs' \dplus ys)}
+      \end{align*}
+      Expand $\textlog{isList}\, v\, (x :: xs' \dplus ys)$, then it becomes
+      \begin{align*}
+        \forall x, xs', hd, l_1, ys, v. &
+        \hoareV[t]{hd \gmapsto (x, u) * \textlog{isList}\, u\, (xs' \dplus ys)}
+        {\Inj_2\, hd} {
+          v. v = \Inj_2\, hd \wedge \exists hd', l_1'.
+          \begin{array}[c]{l}
+            v = \Inj_2 (hd') * \\
+            hd' \gmapsto (x, l_1') * \\
+            \textlog{isList}\, l_1'\, (xs' \dplus ys)
+          \end{array}
+        }
+      \end{align*}
+      Apparently, $\exists hd, u$ such that
+      \begin{align*}
+        \forall x, xs', hd, l_1, ys, v. &
+        \hoareV[t]{hd \gmapsto (x, u) * \textlog{isList}\, u\, (xs' \dplus ys)}
+        {\Inj_2\, hd}
+        {v. v = \Inj_2\, hd * hd \gmapsto (x, u) *
+        \textlog{isList}\, u\, (xs' \dplus ys)}
+      \end{align*}
+      which is immediately by \rulenamestyle{Ht-frame} and \rulenamestyle{Ht-ret}.
+
+    \item It is not valid. Because the ordinary conjuntion cannot guarantee that
+      list $l$ and $l'$ don't overlap with each other. When there are overlaps,
+      $\textlog{append}\, l\, l'$ can construct a cyclic list.
+  \end{itemize}
+\end{proof}
+
+\begin{exercise}
+  The $\textlog{append}$ function in the previous exercise is not tail recursive
+  and hence it space consumption is linear in the length of the first list. A
+  better implementation of append for linked lists is the following.
+  \begin{align*}
+    \textlog{append}’\, l\, l'= \spac & \Let go=\Rec f(h\, p)=
+    \MatchML h with
+    \Inj_1\, x_1=>\mapelem{p}{(\pi_1\, (\deref{p}), l')}
+    | \Inj_2\, x_2=>f\, (\pi_2\, (\deref{x_2}))\, x_2
+    end {} \\
+    & in \MatchML l with
+    \Inj_1\, x_1=>l'
+    | \Inj_2\, x_2=>go\, (\pi_2 (\deref{x_2}))\, x_2;\; l
+    end {}
+  \end{align*}
+  In the function $go$ the value $p$ is the last node of the list $l$ we have seen
+  while traversing $l$. Thus $go$ traverses the first list and once it reaches the
+  end it updates the tail pointer in the last node to point to the second list,
+  $l'$ .
+
+  Prove for $\textlog{append}’$ the same specification as for $\textlog{append}$
+  above. You need to come up with a strong enough invariant for the function $go$,
+  relating $h$, $p$ and $xs$ and $ys$.
+\end{exercise}
+
+\begin{proof}
+  We are going to prove
+  \begin{align}
+    \forall xs, ys, l, l'.
+    \hoare{\textlog{isList}\, l\, xs * \textlog{isList}\, l' ys}
+    {\textlog{append}'\, l\, l'}{v. \textlog{isList}\, v\, (xs \dplus ys)}.
+    \label{exe4.25:1}
+  \end{align}
+
+  First, consider this recursive function
+  \begin{align*}
+    \Rec f(h\, p)=
+    \MatchML h with
+    \Inj_1\, x_1=>\mapelem{p}{(\pi_1\, (\deref{p}), l')}
+    | \Inj_2\, x_2=>f\, (\pi_2\, (\deref{x_2}))\, x_2
+    end {}
+  \end{align*}
+
+  From the first arm of $\langkw{match}$ we know that $l'$ is appended after at
+  $p$ which is a pointer of a node, at the end of the function.
+
+  From the second arm of $\langkw{match}$ we know that $h$ is the ``next''
+  pointer of $p$, which is optional, and after an iteration, both $h$ and $p$ move
+  to the next node.
+
+  Based on these observations, we construct the following invariant of $f$ and
+  prove it.
+  \begin{align}
+    \forall l', x, h, p, xs, ys.
+    \hoareV[t]{p \gmapsto (x, h) * \textlog{isList}\, h\, xs *
+    \textlog{isList}\, l'\, ys}
+    {f\, h\, p}
+    {v.v = () \wedge \exists h. p \gmapsto (x, h).
+    \textlog{isList}\, h\, (xs \dplus ys)}
+    \label{exe4.25:2}
+  \end{align}
+  Here $h$ might change after execution of $f\, h\, p$, but $p$ always remains
+  unchanged.
+
+  Apply \rulenamestyle{Ht-rec}, and we have the induction hypothesis
+  \label{exe4.26:2} and the new goal \label{exe4.26:3}
+  \begin{align}
+    \vctx, g: \Val \mid \forall l', x, h, p, xs, ys.
+    & \hoareV[t]{p \gmapsto (x, h) * \textlog{isList}\, h\, xs *
+    \textlog{isList}\, l'\, ys}
+    {g\, h\, p}
+    {v.v = () \wedge \exists h. p \gmapsto (x, h) *
+    \textlog{isList}\, h\, (xs \dplus ys)}
+    \label{exe4.25:3} \\
+    \proves \forall l', x, h, p, xs, ys.
+    & \hoareV[t]{p \gmapsto (x, h) * \textlog{isList}\, h\, xs *
+    \textlog{isList}\, l'\, ys} {
+      \MatchML h with
+      \Inj_1\, x_1=>\mapelem{p}{(\pi_1\, (\deref{p}), l')}
+      | \Inj_2\, x_2=>g\, (\pi_2\, (\deref{x_2}))\, x_2
+      end {}
+    } {v.v = () \wedge \exists h. p \gmapsto (x, h) *
+    \textlog{isList}\, h\, (xs \dplus ys)}
+    \label{exe4.25:4}
+  \end{align}
+
+  Consider 2 cases of $xs$ and apply \rulenamestyle{Ht-eq-pre},
+  \rulenamestyle{Ht-match} and \rulenamestyle{Ht-exist} on \eqref{exe4.25:4},
+  \begin{align}
+    \forall l', x, p, ys.
+    & \hoareV[t]{p \gmapsto (x, \Inj_1\, ()) * \textlog{isList}\, l'\, ys}
+    {\mapelem{p}{(\pi_1\, (\deref{p}), l')}}
+    {v.v = () \wedge \exists h. p \gmapsto (x, h) * \textlog{isList}\, h\, ys}
+    \tag{\ref{exe4.25:4}a} \label{exe4.25:4a} \\
+    \forall l', x, x', hd, h', p, xs', ys.
+    & \hoareV[t]{
+      \begin{array}[c]{l}
+        p \gmapsto (x, \Inj_2\, (hd)) * \\
+        hd \gmapsto (x', h') * \\
+        \textlog{isList}\, h'\, xs' * \\
+        \textlog{isList}\, l'\, ys
+      \end{array}
+    } {g\, (\pi_2\, (\deref{hd}))\, hd} {
+      v.v = () \wedge \exists h.
+        p \gmapsto (x, h) *
+        \textlog{isList}\, h\, (x' :: xs' \dplus ys)
+    }
+    \tag{\ref{exe4.25:4}b} \label{exe4.25:4b}
+  \end{align}
+
+  \eqref{exe4.25:4a} can be obtained by applying \rulenamestyle{Ht-bind-det},
+  \rulenamestyle{Ht-load}, \rulenamestyle{Ht-bind-det}, \rulenamestyle{Ht-proj},
+  and \rulenamestyle{Ht-store}, where the last step is
+  \begin{align*}
+    \forall l', x, p, ys.
+    \hoareV[t]{p \gmapsto (x, \Inj_1\, ()) * \textlog{isList}\, l'\, ys}
+    {\mapelem{p}{x, l')}}
+    {v.v = () \wedge p \gmapsto (x, l') * \textlog{isList}\, l'\, ys}
+  \end{align*}
+  which is immediate from \rulenamestyle{Ht-store}.
+
+  Similarly, apply \rulenamestyle{Ht-bind-det}, \rulenamestyle{Ht-load},
+  \rulenamestyle{Ht-bind-det}, and \rulenamestyle{Ht-proj} to eliminate $hd$
+  in it,
+  \begin{align*}
+    & \forall l', x, x', hd, h', p, xs', ys. \\
+    & \hoareV[t]{
+        p \gmapsto (x, \Inj_2\, (hd)) * hd \gmapsto (x', h') *
+        \textlog{isList}\, h'\, xs' * \textlog{isList}\, l'\, ys
+    } {g\, h'\, hd} {
+      v.v = () \wedge \exists h. p \gmapsto (x, h) *
+        \textlog{isList}\, h\, (x' :: xs' \dplus ys)
+    }
+  \end{align*}
+  Let $h \equiv \Inj_2\, (hd)$ and $xs \equiv x' :: xs'$, and fold the first
+  $\textlog{isList}$, then we have
+  \begin{align*}
+    \forall l', x, h, p, xs, ys.
+    \hoareV[t]
+    {p \gmapsto (x, h) * \textlog{isList}\, h\, xs * \textlog{isList}\, l'\, ys}
+    {g\, h'\, hd}
+    {v.v = () \wedge \exists h. p \gmapsto (x, h) *
+        \textlog{isList}\, h\, (x' :: xs' \dplus ys)}
+  \end{align*}
+
+  It is immediate from the induction hypothesis \eqref{exe4.25:3}.
+
+  Now we can use \eqref{exe4.25:2} to prove \eqref{exe4.25:1}. First apply
+  \rulenamestyle{Ht-let-det} to eliminate $go$,
+  \begin{align}
+    \forall xs, ys, l, l'.
+    \hoareV[t]{\textlog{isList}\, l\, xs * \textlog{isList}\, l' ys} {
+      \MatchML l with
+      \Inj_1\, x_1=>l'
+      | \Inj_2\, x_2=>(\Rec f(h\, p)=\ldots)\, (\pi_2\, \deref{(x_2)})\, x_2;\; l
+      end {}
+    } {v. \textlog{isList}\, v\, (xs \dplus ys)}
+    \label{exe4.25:5}
+  \end{align}
+
+  Consider 2 cases of $xs$, and apply \rulenamestyle{Ht-eq-pre},
+  \rulenamestyle{Ht-match}, and \rulenamestyle{Ht-exist} on \eqref{exe4.25:5}
+  \begin{align}
+    \forall ys, l, l'.
+    & \hoare{\textlog{isList}\, l' ys}{l'}{v. \textlog{isList}\, v\, ys}
+    \tag{\ref{exe4.25:5}a} \label{exe4.25:5a} \\
+    \forall x, xs', ys, hd, l_1, l'.
+    & \hoareV[t]{hd \gmapsto (x, l_1) *
+    \textlog{isList}\, l_1\, xs' * \textlog{isList}\, l' ys}
+    {(\Rec f(h\, p)=\ldots)\, (\pi_2\, \deref{(hd)})\, hd;\; \Inj_2\, hd}
+    {v. \textlog{isList}\, v\, (x :: xs' \dplus ys)}
+    \tag{\ref{exe4.25:5}b} \label{exe4.25:5b}
+  \end{align}
+  \eqref{exe4.25:5a} is immediate by \rulenamestyle{Ht-ret}.
+
+  Apply \rulenamestyle{Ht-bind-det}, \rulenamestyle{Ht-load},
+  \rulenamestyle{Ht-bind-det}, and \rulenamestyle{Ht-proj} to eliminate
+  $\pi_2\, \deref{(hd)}$
+  \begin{align}
+    \forall x, xs', ys, hd, l_1, l'.
+    & \hoareV[t]{hd \gmapsto (x, l_1) *
+    \textlog{isList}\, l_1\, xs' * \textlog{isList}\, l' ys}
+    {(\Rec f(h\, p)=\ldots)\, l_1\, hd;\; \Inj_2\, hd}
+    {v. \textlog{isList}\, v\, (x :: xs' \dplus ys)}
+    \tag{\ref{exe4.25:5}c} \label{exe4.25:5c}
+  \end{align}
+
+  From \eqref{exe4.25:2} we know that
+  \begin{align}
+    \forall x, xs', ys, hd, l_1, l'.
+    & \hoareV[t]{hd \gmapsto (x, l_1) *
+    \textlog{isList}\, l_1\, xs' * \textlog{isList}\, l' ys}
+    {(\Rec f(h\, p)=\ldots)\, l_1\, hd}
+    {v. v = () \wedge \exists h. hd \gmapsto (x, h) *
+    \textlog{isList}\, h\, (xs' \dplus ys)}
+    \tag{\ref{exe4.25:5}d} \label{exe4.25:5d}
+  \end{align}
+
+  Then apply \rulenamestyle{Ht-seq} to \eqref{exe4.25:5c} and associate it
+  with \eqref{exe4.25:5d}
+  \begin{align*}
+    \forall x, xs', ys, hd, l_1, l'.
+    & \hoareV[t]{\exists h. hd \gmapsto (x, h) *
+    \textlog{isList}\, h\, xs' * \textlog{isList}\, l' ys}
+    {\Inj_2\, hd}
+    {v. \textlog{isList}\, v\, (x :: xs' \dplus ys)}
+  \end{align*}
+
+  It can be derived by \rulenamestyle{Ht-exist}, \rulenamestyle{Ht-ret},
+  and the definition of $\textlog{isList}$.
+\end{proof}
+
+Exercises 4.26 -- 4.30 are done in Coq.
