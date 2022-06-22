@@ -9,3 +9,5 @@ The [`tex`](tex/) directory contains part of the exercises written in LaTeX.
 
 The PDF can be viewed at 
 [iris-exercises.pdf](https://raw.githubusercontent.com/frank-king/Iris-playgound/pdf/pdf/iris-exercises.pdf)
+
+The [`coq`](coq/) directory contains part of the exercises written in Coq.
