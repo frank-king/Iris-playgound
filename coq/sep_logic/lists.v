@@ -286,3 +286,201 @@ Section exercise4_30.
     by rewrite List.rev_involutive.
   Qed.
 End exercise4_30.
+
+Section case_study_foldr.
+  Definition foldr : val :=
+    rec: "foldr" "f" "a" "l" :=
+      match: "l" with
+        NONE => "a"
+      | SOME "hd" =>
+          let: "h" := Fst ! "hd" in
+          let: "t" := Snd ! "hd" in
+          "f" "h" ("foldr" "f" "a" "t")
+      end.
+
+  Fixpoint all (P : val → iProp) xs : iProp :=
+    match xs with
+    | [] => True
+    | x :: xs' => P x ∗ all P xs'
+    end.
+
+  Lemma foldr_spec :
+    ∀ P I (f: val) (a : val) xs l,
+    {{{ is_list l xs ∗ all P xs ∗ I [] a ∗
+      ⌜(∀ x a' ys,
+        {{{ P x ∗ I ys a' }}} f x a' {{{r, RET r; I (x :: ys) r }}}
+      )⌝ }}}
+      foldr f a l
+    {{{ r, RET r; is_list l xs ∗ I xs r }}}.
+  Proof.
+    iIntros (P I f a xs l Φ) "(Hl & HP & HI & %Hf) H".
+    iLöb as "IH" forall (xs l Φ). wp_rec. do 2 wp_let.
+    destruct xs; iSimplifyEq.
+    - wp_match. iApply "H". by iFrame.
+    - iDestruct "Hl" as (hd l') "(%Hl & Hhd & Hl)". subst.
+      wp_match. do 2 (wp_load; wp_proj; wp_let).
+      wp_bind (foldr _ _ _). iDestruct "HP" as "[HP HP']".
+      iApply ("IH" with "[$] [$] [$] [HP Hhd H]").
+      iNext. iIntros (r) "[Hl' HI]".
+      wp_apply (Hf with "[$HP HI//]").
+      iIntros (r') "HI". iApply "H". iFrame.
+      iExists hd, l'. by iFrame.
+  Qed.
+End case_study_foldr.
+
+Section sum_list. (* exercise5_2 *)
+  Definition sum_list : val :=
+    rec: "sum_list" "l" :=
+      let: "f" := (λ: "x" "y", "x" + "y")%V in foldr "f" #0 "l".
+
+  Fixpoint list_sum (xs : list Z) : Z :=
+    match xs with
+    | [] => 0
+    | x :: xs' => x + list_sum xs'
+    end.
+
+  Inductive is_sum_of_list_v : list val → val → Prop :=
+    | sum_emp : is_sum_of_list_v [] #0
+    | sum_cons : ∀ vs (n : Z) (ns : Z),
+        is_sum_of_list_v vs #ns →
+        is_sum_of_list_v (#n :: vs) #(n + ns).
+
+  Definition is_sum_of_list l s : iProp := ⌜is_sum_of_list_v l s⌝.
+
+  Definition is_nat v : iProp := ∃ x : Z, ⌜v = #x⌝.
+
+  Inductive val_list_is_nat_list : list val → list Z → Prop :=
+    | nl_emp : val_list_is_nat_list [] []
+    | nl_cons : ∀ (x : Z) vs xs,
+        val_list_is_nat_list vs xs →
+        val_list_is_nat_list (#x :: vs) (x :: xs).
+
+  Lemma all_is_nat_pesist :
+    ∀ vs, all is_nat vs ⊢ □ all is_nat vs.
+  Proof.
+    induction vs; [by iIntros|].
+    iIntros "[%Ha H]". iPoseProof (IHvs with "H") as "#H'".
+    iModIntro. destruct Ha as [x Ha]. subst.
+    iSplit; [by iExists x|]. iApply "H'".
+  Qed.
+
+  Lemma nat_list_is_all_nat :
+    ∀ vs xs,
+    ⌜val_list_is_nat_list vs xs⌝ ⊢ □ all is_nat vs.
+  Proof.
+    iIntros (vs xs) "%H". iApply (all_is_nat_pesist).
+    generalize dependent xs. induction vs; [done|].
+    iIntros. inversion H. subst.
+    iSplit; [by iExists x|]. apply (IHvs _ H3).
+  Qed.
+
+  Lemma list_all_nat_is_nat_list l vs :
+    is_list l vs ∗ □ all is_nat vs ⊢
+      (∃ xs, is_list_nat l xs ∗ ⌜val_list_is_nat_list vs xs⌝).
+  Proof.
+    iIntros "[Hl #Hv]".
+    iInduction vs as [|v vs] "IH" forall (l);
+        [iExists []; iFrame; iPureIntro; constructor|].
+    iDestruct "Hl" as (hd l') "(%Hl & Hhd & Hl)". subst.
+    iDestruct "Hv" as "[Hx Hv]". iDestruct "Hx" as (x) "%Hx". subst.
+    iSpecialize ("IH" with "[$] [$]").
+    iDestruct "IH" as (xs) "[IHl' %Hv]".
+    iExists (x :: xs). iSplitL; [iExists hd, l'; by iFrame|].
+    iPureIntro. by constructor.
+  Qed.
+
+  Lemma list_iff_list_nat vs xs :
+    val_list_is_nat_list vs xs →
+      ∀ l, is_list l vs ⊣⊢ is_list_nat l xs.
+  Proof.
+    iIntros.
+    iInduction H as [|v x vs xs Hvx H IH] "IH" forall (l);
+        [by iSplit|subst].
+    iSplit; iIntros "H";
+      iDestruct "H" as (hd l') "(%Hl & Hhd & Hl)"; subst;
+      iExists hd, l'; iFrame; iSplitR; [done| |done| ];
+      by iApply "IH".
+  Qed.
+
+  Lemma nat_list_is_list_all_nat l xs :
+    is_list_nat l xs ⊢
+      (∃ vs, is_list l vs ∗ ⌜val_list_is_nat_list vs xs⌝).
+  Proof.
+    iIntros "Hl".
+    iInduction xs as [|x xs] "IH" forall (l);
+        [iExists []; iFrame; iPureIntro; constructor|].
+    iDestruct "Hl" as (hd l') "(%Hl & Hhd & Hl)". subst. fold is_list_nat.
+    iPoseProof ("IH" with "Hl") as (vs) "[Hl' %H]".
+    iExists (#x :: vs). iSplitL; [|iPureIntro; by constructor].
+    iExists hd, l'. by iFrame.
+  Qed.
+
+  Lemma sum_list_spec :
+    ∀ l xs,
+    {{{ is_list_nat l xs }}}
+      sum_list l
+    {{{ r, RET r; is_list_nat l xs ∗
+      ⌜∃ n : Z, r = #n ∧ n = list_sum xs⌝ }}}.
+  Proof.
+    iIntros (l xs Φ) "Hl H". unfold sum_list. wp_rec. wp_pures.
+    iPoseProof (nat_list_is_list_all_nat with "Hl")
+      as (vs) "[Hl #Hv]".
+    iPoseProof (nat_list_is_all_nat with "Hv") as "#Hv'".
+    wp_apply (
+      foldr_spec is_nat is_sum_of_list _ _ vs
+      with "[$Hl $Hv'] [H]"); [iSplitL; [iPureIntro; constructor|]|].
+    - iPureIntro. iIntros (x a' ys Φ') "[Hx Hys] H".
+      iDestruct "Hx" as (n) "%Hx". subst. wp_lam. wp_let.
+      iStopProof. iIntros "[%H H]".
+      inversion H; iSimplifyEq; wp_op; iApply "H"; iPureIntro;
+        by constructor.
+    - iStopProof. iIntros "(#[%H Hv] & H)".
+      iNext. iIntros (r) "[Hl %Hvs]".
+      iPoseProof (list_iff_list_nat _ _ H) as "Hvx".
+      iPoseProof ("Hvx" with "Hl") as "Hl".
+      iApply "H". iFrame. iPureIntro.
+      generalize dependent xs.
+      induction Hvs; intros xs H; inversion H; subst; [by exists 0| ].
+      exists (n + ns)%Z. split; [done|].
+      apply IHHvs in H3. destruct H3 as (n1 & Hns & IH).
+      inversion Hns; subst. by simpl.
+  Qed.
+End sum_list. (* exercise5_2 *)
+
+Section filter. (* exercise5_3 *)
+  Definition filter : val :=
+    rec: "filter" "p" "l" :=
+      let: "f" :=
+        λ: "x" "xs",
+          if: "p" "x" then SOME (ref ("x", "xs")) else "xs"
+      in foldr "f" NONEV "l".
+
+  Definition iTrue (x : val) : iProp := True.
+
+  Lemma all_true_is_true : ∀ l, ⊢ all iTrue l.
+  Proof. induction l; [done|]. by iSplitL. Qed.
+
+  Lemma filter_spec :
+    ∀ P (p : val) l xs,
+      {{{ is_list l xs ∗ ⌜(∀ x : val,
+        {{{ True }}}
+          p x
+        {{{ (v : bool), RET #v; ⌜P x = v⌝ }}})⌝
+      }}}
+        filter p l
+      {{{ r, RET r; is_list l xs ∗ is_list r (List.filter P xs) }}}.
+  Proof.
+    iIntros (P p l xs Φ) "[Hl %H] H". wp_rec. wp_let. wp_pures.
+    wp_apply (
+      foldr_spec iTrue (λ xs l, is_list l (List.filter P xs))
+      with "[$Hl] [H]"); [|done].
+    iSplitL; [iApply all_true_is_true|].
+    iSplitL; [done|iPureIntro].
+    iIntros (x l' ys Φ') "[_ Hl'] H". wp_lam. wp_let.
+    wp_apply H; [done|iIntros (v) "%Hv"].
+    destruct (v); [wp_if_true|wp_if_false].
+    - wp_alloc hd as "Hhd". wp_pures. iApply "H". simpl.
+      rewrite Hv. iExists hd, l'. by iFrame.
+    - iApply "H". simpl. by rewrite Hv.
+  Qed.
+End filter.  (* exercise5_3 *)
